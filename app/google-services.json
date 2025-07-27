@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "40033569511",
+    "project_id": "myshoppingappadmin1-4921e",
+    "storage_bucket": "myshoppingappadmin1-4921e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:40033569511:android:74bc6b7bbb956d440e7042",
+        "android_client_info": {
+          "package_name": "com.wp7367.myshhoppingapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1nwttf14CmSiskJG-DvcBgiaTA7IjZNw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:40033569511:android:b38ab5ee02158f940e7042",
+        "android_client_info": {
+          "package_name": "com.wp7367.myshoppingapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1nwttf14CmSiskJG-DvcBgiaTA7IjZNw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:40033569511:android:545e91df32b8ffe20e7042",
+        "android_client_info": {
+          "package_name": "com.wp7367.myshoppingappadmin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1nwttf14CmSiskJG-DvcBgiaTA7IjZNw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
