@@ -16,6 +16,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 @Composable
 fun HomeScreenUi(viewModels: MyViewModel = hiltViewModel()){
 
+
+
+
+    //  -- Here State is Collect --
+
     val state = viewModels.getAllCategory.collectAsState()
 
 
