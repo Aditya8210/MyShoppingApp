@@ -82,4 +82,18 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
 
     }
 
+    override suspend fun loginWithEmailAndPassword(email: String, password: String): Flow<ResultState<String>> = callbackFlow {
+        trySend(ResultState.Loading)
+        FirebaseAuth.signInWithEmailAndPassword(email,password).addOnSuccessListener {
+            trySend(ResultState.Success("User Login Successfully"))
+        }.addOnFailureListener {
+            trySend(ResultState.Error(it.message.toString()))
+        }
+        awaitClose {
+            close()
+        }
+
+    }
+
+
 }

@@ -10,10 +10,14 @@ interface repo  {
 
   suspend  fun getAllCategory(): Flow <ResultState<List<category>>>
 
+
+
+
+
+
   suspend fun getAllProduct():Flow<ResultState<List<productsModel>>>
 
-
-
-
   suspend fun registerUserWithEmailAndPassword(userData: userData): Flow<ResultState<String>>
+
+  suspend fun loginWithEmailAndPassword(email: String, password: String): Flow<ResultState<String>>
 }

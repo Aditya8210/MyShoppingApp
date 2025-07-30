@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.wp7367.myshoppingapp.common.ResultState
 import com.wp7367.myshoppingapp.data_layer.useCase.GetAllCategoryUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.GetAllProductUseCase
+import com.wp7367.myshoppingapp.data_layer.useCase.LoginUserWithEmailPassUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.RegisterUserWithEmailPassUseCase
 import com.wp7367.myshoppingapp.domain_layer.models.category
 import com.wp7367.myshoppingapp.domain_layer.models.productsModel
@@ -19,7 +20,8 @@ import javax.inject.Inject
 @HiltViewModel
 class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategoryUseCase,
                                       private val GetAllProduct: GetAllProductUseCase,
-                                      private val RegisterUser: RegisterUserWithEmailPassUseCase
+                                      private val RegisterUser: RegisterUserWithEmailPassUseCase,
+                                      private val LoginUser: LoginUserWithEmailPassUseCase
 ) : ViewModel() {
 
 
@@ -35,6 +37,9 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
 
     private val _registerUserSt = MutableStateFlow(RegisterState())
     val registerUser = _registerUserSt.asStateFlow()
+
+    private val _loginUserSt = MutableStateFlow(LoginState())
+    val loginUser = _loginUserSt.asStateFlow()
 
 
 //          ~ Here All Function and UseCase is Called ~
@@ -108,6 +113,27 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
     }
 
 
+    fun loginUser(email: String, password: String) {
+
+        viewModelScope.launch {
+            LoginUser.loginUserWithEmailPassUseCase(email,password).collectLatest {
+                when (it) {
+                    is ResultState.Loading -> {
+                        _loginUserSt.value = LoginState(isLoading = true)
+                    }
+                    is ResultState.Success -> {
+                        _loginUserSt.value = LoginState(data = it.data)
+                    }
+                    is ResultState.Error -> {
+                        _loginUserSt.value = LoginState(error = it.exception)
+                    }
+
+                }
+            }
+        }
+    }
+
+
 }
 
 
@@ -129,6 +155,12 @@ data class getProductsState(
 )
 
 data class RegisterState(
+    val isLoading: Boolean = false,
+    val error: String ?= null,
+    val data: String? = null
+)
+
+data class LoginState(
     val isLoading: Boolean = false,
     val error: String ?= null,
     val data: String? = null
