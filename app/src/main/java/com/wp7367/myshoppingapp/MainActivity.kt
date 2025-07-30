@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.wp7367.myshoppingapp.ui.theme.MyShoppingAppTheme
 import com.wp7367.myshoppingapp.ui_layer.screens.HomeScreenUi
+import com.wp7367.myshoppingapp.ui_layer.screens.SignUpScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -23,7 +24,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             MyShoppingAppTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    HomeScreenUi()
+                    SignUpScreen()
                 }
             }
         }

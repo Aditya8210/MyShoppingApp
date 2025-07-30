@@ -5,5 +5,5 @@ import javax.inject.Inject
 
 class GetAllCategoryUseCase @Inject constructor(private val repo: repo)  {
 
-    fun getAllCategoryUseCase() = repo.getAllCategory()
+ suspend   fun getAllCategoryUseCase() = repo.getAllCategory()
 }

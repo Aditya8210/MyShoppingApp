@@ -1,5 +1,6 @@
 package com.wp7367.myshoppingapp.data_layer.di
 
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
 import dagger.Provides
@@ -17,6 +18,13 @@ object DataModel {
     fun provideFireStore(): FirebaseFirestore {
         return FirebaseFirestore.getInstance()
 
+    }
+
+
+    @Provides
+
+    fun provideFirebaseAuth(): FirebaseAuth {
+        return FirebaseAuth.getInstance()
     }
 
 

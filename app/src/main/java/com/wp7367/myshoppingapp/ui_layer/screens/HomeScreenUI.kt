@@ -21,12 +21,14 @@ fun HomeScreenUi(viewModels: MyViewModel = hiltViewModel()){
 
     //  -- Here State is Collect --
 
-    val state = viewModels.getAllCategory.collectAsState()
+    val ctState = viewModels.getAllCategory.collectAsState()
+    val productState = viewModels.getAllProduct.collectAsState()
 
 
 
     LaunchedEffect(key1 = Unit){
         viewModels.getAllCategory()
+        viewModels.getAllProduct()
     }
 
 
@@ -36,7 +38,7 @@ fun HomeScreenUi(viewModels: MyViewModel = hiltViewModel()){
     ) {
         LazyRow {
             //  here check proper items  datatype like List
-            items(state.value.data){
+            items(ctState.value.data){
 
                 Text(text = it!!.name)
                 Text(text = it.imageUri)

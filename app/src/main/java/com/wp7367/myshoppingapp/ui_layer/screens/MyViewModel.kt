@@ -4,7 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wp7367.myshoppingapp.common.ResultState
 import com.wp7367.myshoppingapp.data_layer.useCase.GetAllCategoryUseCase
+import com.wp7367.myshoppingapp.data_layer.useCase.GetAllProductUseCase
+import com.wp7367.myshoppingapp.data_layer.useCase.RegisterUserWithEmailPassUseCase
 import com.wp7367.myshoppingapp.domain_layer.models.category
+import com.wp7367.myshoppingapp.domain_layer.models.productsModel
+import com.wp7367.myshoppingapp.domain_layer.models.userData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,43 +17,101 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategoryUseCase) : ViewModel() {
+class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategoryUseCase,
+                                      private val GetAllProduct: GetAllProductUseCase,
+                                      private val RegisterUser: RegisterUserWithEmailPassUseCase
+) : ViewModel() {
 
 
-
-  //   --Here State is Manage --
+    //   ~ Here State is Create ~
 
     private val _getAllCategorySt = MutableStateFlow(getCategoryState())
     val getAllCategory = _getAllCategorySt.asStateFlow()
 
 
-
-   fun getAllCategory() {
-
-       viewModelScope.launch {
-           GetAllCategory.getAllCategoryUseCase().collectLatest{
-               when(it){
-                   is ResultState.Loading -> {
-                       _getAllCategorySt.value = getCategoryState(isLoading = true)
-                   }
-                   is ResultState.Success -> {
-                       _getAllCategorySt.value = getCategoryState(data = it.data)
-                   }
-                   is ResultState.Error -> {
-                       _getAllCategorySt.value = getCategoryState(error = it.exception)
-                   }
-               }
-
-           }
-
-       }
-
-   }
+    private val _getAllProductSt = MutableStateFlow(getProductsState())
+    val getAllProduct = _getAllProductSt.asStateFlow()
 
 
+    private val _registerUserSt = MutableStateFlow(RegisterState())
+    val registerUser = _registerUserSt.asStateFlow()
+
+
+//          ~ Here All Function and UseCase is Called ~
+
+    fun getAllProduct() {
+        viewModelScope.launch {
+            GetAllProduct.getAllProductUseCase().collectLatest {
+                when (it) {
+                    is ResultState.Loading -> {
+                        _getAllProductSt.value = getProductsState(isLoading = true)
+                    }
+
+                    is ResultState.Success -> {
+                        _getAllProductSt.value = getProductsState(data = it.data)
+                    }
+
+                    is ResultState.Error -> {
+                        _getAllProductSt.value = getProductsState(error = it.exception)
+                    }
+                }
+            }
+        }
+    }
+
+    fun getAllCategory() {
+
+        viewModelScope.launch {
+            GetAllCategory.getAllCategoryUseCase().collectLatest {
+                when (it) {
+                    is ResultState.Loading -> {
+                        _getAllCategorySt.value = getCategoryState(isLoading = true)
+                    }
+
+                    is ResultState.Success -> {
+                        _getAllCategorySt.value = getCategoryState(data = it.data)
+                    }
+
+                    is ResultState.Error -> {
+                        _getAllCategorySt.value = getCategoryState(error = it.exception)
+                    }
+                }
+
+            }
+
+        }
+
+    }
+
+
+    fun registerUser(userData: userData) {
+        viewModelScope.launch {
+            RegisterUser.registerUserWithEmailPassUseCase(userData).collectLatest {
+                when (it) {
+                    is ResultState.Loading -> {
+                        _registerUserSt.value = RegisterState(isLoading = true)
+                    }
+
+                    is ResultState.Success -> {
+                        _registerUserSt.value = RegisterState(data = it.data)
+                    }
+
+                    is ResultState.Error -> {
+                        _registerUserSt.value = RegisterState(error = it.exception)
+                    }
+
+                }
+            }
+        }
+
+
+    }
 
 
 }
+
+
+// _________________________________DATA CLASS_____________________________________
 
 data class getCategoryState(
 
@@ -58,6 +120,18 @@ data class getCategoryState(
 
     // Here Changing
     val data: List<category?> = emptyList()
+)
+
+data class getProductsState(
+    val isLoading: Boolean = false,
+    val error: String = "",
+    val data: List<productsModel?> = emptyList()
+)
+
+data class RegisterState(
+    val isLoading: Boolean = false,
+    val error: String ?= null,
+    val data: String? = null
 )
 
 
