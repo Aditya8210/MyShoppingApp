@@ -2,6 +2,7 @@ package com.wp7367.myshoppingapp.ui_layer.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
@@ -9,6 +10,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,14 +23,21 @@ import com.wp7367.myshoppingapp.domain_layer.models.userData
 @Composable
 fun  LoginScreen(viewModel: MyViewModel = hiltViewModel()){
 
+
+
     val lgState = viewModel.loginUser.collectAsState()
+
 
 
     val context = LocalContext.current
 
     when{
         lgState.value.isLoading ->{
-            CircularProgressIndicator()
+            Box(modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center){
+                CircularProgressIndicator()
+
+            }
 
         }
         lgState.value.error != null ->{
