@@ -35,6 +35,7 @@ fun AppNav(firebaseAuth: FirebaseAuth,){
 
 
 //---------------------  Step 2 ~ To Create BottomNavigation Bar ~ ---------------------------------
+
     val navItemList = listOf(
         navItemList("Home",Icons.Default.Home),
         navItemList("Favorite",Icons.Default.Favorite),
@@ -56,6 +57,34 @@ fun AppNav(firebaseAuth: FirebaseAuth,){
 
         SubNavigation.MainHomeScreen
     }
+
+
+
+    //--------------------------------------------------------------------------------------------------
+    //             Step 3  ~ To Create BottomNavigation Bar ~
+    Scaffold (
+        bottomBar = {
+            NavigationBar {
+                navItemList.forEachIndexed { index,navItemList ->
+
+                    NavigationBarItem(
+                        selected = selectedIndex == index,
+                        onClick = {selectedIndex = index},
+                        label = {navItemList.label},
+                        icon = {
+                            Icon(navItemList.icon, contentDescription = navItemList.label)
+                        }
+                    )
+
+                }
+            }
+        }
+    ){
+        ContentScreen(modifier = Modifier.padding(it),selectedIndex,navController = navController)
+    }
+
+//--------------------------------------------------------------------------------------------------
+
 
     NavHost(navController = navController, startDestination = StartScreen) {
 
@@ -82,28 +111,7 @@ fun AppNav(firebaseAuth: FirebaseAuth,){
 
     }
 
-//--------------------------------------------------------------------------------------------------
-    //             Step 3  ~ To Create BottomNavigation Bar ~
-    Scaffold (
-        bottomBar = {
-            NavigationBar {
-                navItemList.forEachIndexed { index,navItemList ->
 
-                    NavigationBarItem(
-                        selected = selectedIndex == index,
-                        onClick = {selectedIndex = index},
-                        label = {navItemList.label},
-                        icon = {
-                            Icon(navItemList.icon, contentDescription = navItemList.label)
-                        }
-                    )
-
-                }
-            }
-        }
-    ){
-        ContentScreen(modifier = Modifier.padding(it),selectedIndex,navController = navController)
-    }
 
 }
 

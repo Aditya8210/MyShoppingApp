@@ -32,6 +32,16 @@ fun HomeScreenUi(viewModels: MyViewModel = hiltViewModel(),navController: NavCon
         viewModels.getAllProduct()
     }
 
+// ------------------- ~ New UI ~ ------------------------------------------------------------------
+
+
+
+
+
+
+
+
+// ----------------   ~ Old UI ~ -------------------------------------------------------------------
 
     Column(modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
