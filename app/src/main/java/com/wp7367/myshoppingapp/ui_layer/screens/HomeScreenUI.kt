@@ -12,9 +12,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 
 @Composable
-fun HomeScreenUi(viewModels: MyViewModel = hiltViewModel()){
+fun HomeScreenUi(viewModels: MyViewModel = hiltViewModel(),navController: NavController){
 
 
 

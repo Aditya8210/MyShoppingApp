@@ -16,12 +16,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.wp7367.myshoppingapp.domain_layer.models.userData
 
 @Composable
 
 
-fun SignUpScreen(viewModel: MyViewModel = hiltViewModel()){
+fun SignUpScreen(viewModel: MyViewModel = hiltViewModel(),navController: NavController){
 
 //    ~ Here State is Collect ~
 
