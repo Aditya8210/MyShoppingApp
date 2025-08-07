@@ -3,8 +3,6 @@ package com.wp7367.myshoppingapp.ui_layer.screens.navigation
 import kotlinx.serialization.Serializable
 
 
-
-
 sealed class SubNavigation {
     @Serializable
     object MainHomeScreen : SubNavigation()
@@ -13,10 +11,22 @@ sealed class SubNavigation {
     object LogInSignUpScreen : SubNavigation()
 }
 
+
+
 sealed class Routes {
 
      @Serializable
      object HomeScreen
+
+    @Serializable
+    object FavoriteScreen
+
+    @Serializable
+    object CartScreen
+
+    @Serializable
+    object ProfileScreen
+
 
     @Serializable
     object LogInScreen
@@ -25,3 +35,5 @@ sealed class Routes {
     object SignUpScreen
 
 }
+
+
