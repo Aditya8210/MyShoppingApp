@@ -143,7 +143,7 @@ fun AppNav(firebaseAuth: FirebaseAuth,){
                         CartPage()
                     }
                     composable <Routes.ProfileScreen>{
-                        ProfilePage()
+                        ProfilePage(navController = navController, firebaseAuth = firebaseAuth)
                     }
                 }
             }
