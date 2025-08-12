@@ -42,6 +42,13 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
     val loginUser = _loginUserSt.asStateFlow()
 
 
+
+    init {
+        getAllCategory()
+        getAllProduct()
+    }
+
+
 //          ~ Here All Function and UseCase is Called ~
 
     fun getAllProduct() {
@@ -134,6 +141,7 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
     }
 
 
+
 }
 
 
@@ -165,5 +173,7 @@ data class LoginState(
     val error: String ?= null,
     val data: String? = null
 )
+
+
 
 
