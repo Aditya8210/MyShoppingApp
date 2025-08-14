@@ -5,8 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.wp7367.myshoppingapp.common.ResultState
 import com.wp7367.myshoppingapp.data_layer.useCase.GetAllCategoryUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.GetAllProductUseCase
+import com.wp7367.myshoppingapp.data_layer.useCase.GetUserByIdUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.LoginUserWithEmailPassUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.RegisterUserWithEmailPassUseCase
+import com.wp7367.myshoppingapp.data_layer.useCase.UpdateUserByIdUseCase
 import com.wp7367.myshoppingapp.domain_layer.models.category
 import com.wp7367.myshoppingapp.domain_layer.models.productsModel
 import com.wp7367.myshoppingapp.domain_layer.models.userData
@@ -21,7 +23,10 @@ import javax.inject.Inject
 class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategoryUseCase,
                                       private val GetAllProduct: GetAllProductUseCase,
                                       private val RegisterUser: RegisterUserWithEmailPassUseCase,
-                                      private val LoginUser: LoginUserWithEmailPassUseCase
+                                      private val LoginUser: LoginUserWithEmailPassUseCase,
+                                      private val GetUserData: GetUserByIdUseCase,
+                                      private val UpdateUser: UpdateUserByIdUseCase,
+
 ) : ViewModel() {
 
 
@@ -41,11 +46,17 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
     private val _loginUserSt = MutableStateFlow(LoginState())
     val loginUser = _loginUserSt.asStateFlow()
 
+    private val _getUserDataSt = MutableStateFlow(GetUserDataState())
+    val getUserData = _getUserDataSt.asStateFlow()
+
+    private val _updateDataSt = MutableStateFlow(UpdateDataState())
+    val updateData = _updateDataSt.asStateFlow()
 
 
     init {
         getAllCategory()
         getAllProduct()
+        getUserData("uid")
     }
 
 
@@ -123,14 +134,16 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
     fun loginUser(email: String, password: String) {
 
         viewModelScope.launch {
-            LoginUser.loginUserWithEmailPassUseCase(email,password).collectLatest {
+            LoginUser.loginUserWithEmailPassUseCase(email, password).collectLatest {
                 when (it) {
                     is ResultState.Loading -> {
                         _loginUserSt.value = LoginState(isLoading = true)
                     }
+
                     is ResultState.Success -> {
                         _loginUserSt.value = LoginState(data = it.data)
                     }
+
                     is ResultState.Error -> {
                         _loginUserSt.value = LoginState(error = it.exception)
                     }
@@ -140,11 +153,53 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
         }
     }
 
+    fun getUserData(uid: String) {
+        viewModelScope.launch {
+            GetUserData.getUserByIdUseCase(uid).collectLatest {
+                when (it) {
+                    is ResultState.Loading -> {
+                        _getUserDataSt.value = GetUserDataState(isLoading = true)
+                    }
+
+                    is ResultState.Success -> {
+                        _getUserDataSt.value = GetUserDataState(data = it.data)
+                    }
+
+                    is ResultState.Error -> {
+                        _getUserDataSt.value = GetUserDataState(error = it.exception)
+                    }
+                }
+            }
+        }
+
+
+    }
+
+    fun updateUser(userData: userData)
+    {
+
+        viewModelScope.launch {
+            UpdateUser.updateUserByIdUseCase(userData).collectLatest{
+                when(it){
+                    is ResultState.Loading -> {
+                        _updateDataSt.value = UpdateDataState(isLoading = true)
+                    }
+                    is ResultState.Success -> {
+                        _updateDataSt.value = UpdateDataState(data = it.data)
+                    }
+                    is ResultState.Error -> {
+                        _updateDataSt.value = UpdateDataState(error = it.exception)
+                    }
+
+                }
+
+            }
+        }
+    }
+
 
 
 }
-
-
 // _________________________________DATA CLASS_____________________________________
 
 data class getCategoryState(
@@ -174,6 +229,15 @@ data class LoginState(
     val data: String? = null
 )
 
+data class GetUserDataState(
+    val isLoading: Boolean = false,
+    val error: String ?= null,
+    val data:userData? = null,
+    )
 
-
+data class UpdateDataState(
+    val isLoading: Boolean = false,
+    val error: String ?= null,
+    val data: String? = null
+)
 

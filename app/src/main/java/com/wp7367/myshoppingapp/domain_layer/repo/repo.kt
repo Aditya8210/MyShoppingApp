@@ -13,11 +13,14 @@ interface repo  {
 
 
 
-
-
   suspend fun getAllProduct():Flow<ResultState<List<productsModel>>>
 
   suspend fun registerUserWithEmailAndPassword(userData: userData): Flow<ResultState<String>>
 
   suspend fun loginWithEmailAndPassword(email: String, password: String): Flow<ResultState<String>>
+
+
+  suspend fun getUserById(uid: String): Flow<ResultState<userData>>
+
+  suspend fun updateUserData(userData: userData): Flow<ResultState<String>>
 }

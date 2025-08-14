@@ -96,4 +96,47 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
     }
 
 
+    //     ~ Get User By Id ~
+    override suspend fun getUserById(uid: String): Flow<ResultState<userData>> = callbackFlow {
+        trySend(ResultState.Loading)
+        FirebaseFirestore.collection("USERS")
+            .document(uid).get().addOnSuccessListener { documentSnapshot ->
+                if (documentSnapshot.exists()) { // First, check if the document exists
+                    val user = documentSnapshot.toObject(userData::class.java)
+                    if (user != null) { // Then, check if parsing to userData was successful
+                        val data = user.apply { this.uid = documentSnapshot.id } // Assuming userData has a settable uid
+                        trySend(ResultState.Success(data))
+                    } else {
+                        trySend(ResultState.Error("Data parsing failed. Check userData class and Firestore fields."))
+                    }
+                } else {
+                    trySend(ResultState.Error("User document not found with UID: $uid"))
+                }
+            }.addOnFailureListener { exception -> // Catch other errors like network issues
+                trySend(ResultState.Error(exception.message ?: "An unknown error occurred during fetch."))
+            }
+        awaitClose {
+            close()
+        }
+    }
+
+
+
+    override suspend fun updateUserData(userData: userData): Flow<ResultState<String>> = callbackFlow {
+
+        trySend(ResultState.Loading)
+
+        FirebaseFirestore.collection("USERS").document(FirebaseAuth.uid.toString())
+            .set(userData).addOnSuccessListener {
+                trySend(ResultState.Success("User Data Updated Successfully"))
+            }.addOnFailureListener {
+                trySend(ResultState.Error(it.message.toString()))
+                }
+        awaitClose {
+            close()
+
+            }
+    }
+
+
 }

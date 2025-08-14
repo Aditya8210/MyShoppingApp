@@ -8,5 +8,6 @@ data class userData(
     val password: String = "",
     val phoneNumber: String = "",
     val address: String = "",
+    var uid: String = "",
     val userImage: String = "",
 )
