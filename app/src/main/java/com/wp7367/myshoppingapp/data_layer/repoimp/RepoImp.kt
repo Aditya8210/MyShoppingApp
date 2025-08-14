@@ -100,24 +100,22 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
     override suspend fun getUserById(uid: String): Flow<ResultState<userData>> = callbackFlow {
         trySend(ResultState.Loading)
         FirebaseFirestore.collection("USERS")
-            .document(uid).get().addOnSuccessListener { documentSnapshot ->
-                if (documentSnapshot.exists()) { // First, check if the document exists
-                    val user = documentSnapshot.toObject(userData::class.java)
-                    if (user != null) { // Then, check if parsing to userData was successful
-                        val data = user.apply { this.uid = documentSnapshot.id } // Assuming userData has a settable uid
-                        trySend(ResultState.Success(data))
-                    } else {
-                        trySend(ResultState.Error("Data parsing failed. Check userData class and Firestore fields."))
-                    }
-                } else {
-                    trySend(ResultState.Error("User document not found with UID: $uid"))
+            .document(uid).get().addOnSuccessListener { documentSnapshot -> // Renamed 'it' for clarity
+                documentSnapshot.toObject(userData::class.java)?.let { user ->
+                    user.uid = documentSnapshot.id // Set uid on the non-null user
+                    trySend(ResultState.Success(user))
+                } ?: run {
+                    // This block executes if toObject() returns null
+                    trySend(ResultState.Error("User data for UID '$uid' could not be found or parsed."))
                 }
-            }.addOnFailureListener { exception -> // Catch other errors like network issues
-                trySend(ResultState.Error(exception.message ?: "An unknown error occurred during fetch."))
+            }
+            .addOnFailureListener { exception -> // Network issue Our other Issue Occur
+                trySend(ResultState.Error(exception.message ?: "Failed to fetch user data for UID '$uid' due to an error."))
             }
         awaitClose {
             close()
         }
+
     }
 
 
