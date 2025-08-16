@@ -25,7 +25,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.google.firebase.auth.FirebaseAuth
+import com.wp7367.myshoppingapp.ui_layer.screens.EachProductDetailScreen
 import com.wp7367.myshoppingapp.ui_layer.screens.HomeScreenUi
 import com.wp7367.myshoppingapp.ui_layer.screens.LoginScreen
 import com.wp7367.myshoppingapp.ui_layer.screens.SignUpScreen
@@ -145,6 +147,12 @@ fun AppNav(firebaseAuth: FirebaseAuth,){
                     composable <Routes.ProfileScreen>{
                         ProfilePage(navController = navController, firebaseAuth = firebaseAuth)
                     }
+                }
+
+                composable<Routes.EachProductDetailScreen> {
+
+                    val data = it.toRoute<Routes.EachProductDetailScreen>()
+                    EachProductDetailScreen(navController = navController, productId= data.productId)
                 }
             }
         }

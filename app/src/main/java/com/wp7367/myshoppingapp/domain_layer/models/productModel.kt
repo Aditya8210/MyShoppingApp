@@ -1,17 +1,17 @@
 package com.wp7367.myshoppingapp.domain_layer.models
 
-data class productsModel(
-
+data class ProductModel(
     val name: String = "",
     val description: String = "",
     val price: String = "",
     val finalPrice: String = "",
     val category: String = "",
-    val image: String = "",
+    val image: String = "aditya123",
     val date: Long = System.currentTimeMillis(),
     val availableUnits: Int = 0,
     val isAvailable: Boolean = true,
-    val productId: String = "",
-    val createdBy: String="",
+    val createdBy: String= "",
+    var productId: String = "",
+)
 
-    )
+

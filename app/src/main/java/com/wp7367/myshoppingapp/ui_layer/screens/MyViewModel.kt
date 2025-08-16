@@ -5,14 +5,17 @@ import androidx.lifecycle.viewModelScope
 import com.wp7367.myshoppingapp.common.ResultState
 import com.wp7367.myshoppingapp.data_layer.useCase.GetAllCategoryUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.GetAllProductUseCase
+import com.wp7367.myshoppingapp.data_layer.useCase.GetProductByIdUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.GetUserByIdUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.LoginUserWithEmailPassUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.RegisterUserWithEmailPassUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.UpdateUserByIdUseCase
+
 import com.wp7367.myshoppingapp.domain_layer.models.category
-import com.wp7367.myshoppingapp.domain_layer.models.productsModel
+import com.wp7367.myshoppingapp.domain_layer.models.ProductModel
 import com.wp7367.myshoppingapp.domain_layer.models.userData
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -26,6 +29,9 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
                                       private val LoginUser: LoginUserWithEmailPassUseCase,
                                       private val GetUserData: GetUserByIdUseCase,
                                       private val UpdateUser: UpdateUserByIdUseCase,
+                                      private val GetProductById: GetProductByIdUseCase
+
+
 
 ) : ViewModel() {
 
@@ -52,11 +58,16 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
     private val _updateDataSt = MutableStateFlow(UpdateDataState())
     val updateData = _updateDataSt.asStateFlow()
 
+    private val _getProductByIdSt = MutableStateFlow(GetProductByIdState())
+    val getProductById = _getProductByIdSt.asStateFlow()
+
+
 
     init {
         getAllCategory()
         getAllProduct()
         getUserData("uid")
+
     }
 
 
@@ -175,8 +186,8 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
 
     }
 
-    fun updateUser(userData: userData)
-    {
+
+    fun updateUser(userData: userData) {
 
         viewModelScope.launch {
             UpdateUser.updateUserByIdUseCase(userData).collectLatest{
@@ -193,6 +204,26 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
 
                 }
 
+            }
+        }
+    }
+
+    fun getProductById(productId: String) {
+        viewModelScope.launch (Dispatchers.IO){
+            GetProductById.getProductById(productId).collect  {
+                when (it) {
+                    is ResultState.Loading -> {
+                        _getProductByIdSt.value  = GetProductByIdState(isLoading = true)
+                    }
+                    is ResultState.Success -> {
+                        _getProductByIdSt.value = GetProductByIdState(data = it.data)
+                    }
+                    is ResultState.Error -> {
+                        _getProductByIdSt.value = GetProductByIdState(error = it.exception)
+                    }
+
+
+                }
             }
         }
     }
@@ -214,7 +245,7 @@ data class getCategoryState(
 data class getProductsState(
     val isLoading: Boolean = false,
     val error: String = "",
-    val data: List<productsModel?> = emptyList()
+    val data: List<ProductModel?> = emptyList()
 )
 
 data class RegisterState(
@@ -240,4 +271,10 @@ data class UpdateDataState(
     val error: String ?= null,
     val data: String? = null
 )
+
+    data class GetProductByIdState(
+        val isLoading: Boolean = false,
+        val error: String ?= null,
+        val data:ProductModel? = null
+    )
 

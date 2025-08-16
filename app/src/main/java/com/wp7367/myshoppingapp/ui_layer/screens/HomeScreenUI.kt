@@ -54,8 +54,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.wp7367.myshoppingapp.domain_layer.models.ProductModel
 import com.wp7367.myshoppingapp.domain_layer.models.category
-
+import com.wp7367.myshoppingapp.ui_layer.screens.navigation.Routes
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -227,15 +228,13 @@ fun HomeScreenUi(viewModels: MyViewModel = hiltViewModel(),navController: NavCon
             )
             {
 
-                items(productState.value.data ?: emptyList()) { data ->
+                items(productState.value.data ?:emptyList()) { product ->
 
-                    ProductItem(
-                        image = data!!.image,
-                        name = data.name,
-                        category = data.category,
-                        finalPrice = data.finalPrice,
-                        price = data.price,
+                    ProductCard(
+                        product = product!!,
+
                         onClick = {
+                            navController.navigate(Routes.EachProductDetailScreen(product.productId))
 
                         })
 
@@ -288,13 +287,13 @@ fun CategoryItem(
     Column(
         modifier = Modifier
             .widthIn(min = 90.dp, max = 120.dp) // Flexible width
-            .padding(vertical = 8.dp)          // Added vertical padding
-            .clickable(onClick = onClick),      // Used onClick parameter
+            .padding(vertical = 8.dp)  ,         // Added vertical padding
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Card(
             modifier = Modifier
-                .size(70.dp), // Kept fixed size for the circle
+                .size(70.dp)
+                .clickable(onClick = onClick),
             shape = CircleShape,
             border = BorderStroke(1.dp, Color.Black)
         ) {
@@ -315,59 +314,58 @@ fun CategoryItem(
 }
 
 @Composable
-fun ProductItem(
-    image : String,
-    name: String,
-    category: String,
-    finalPrice: String,
-    price: String,
-    onClick: () -> Unit
-){
+fun ProductCard(product: ProductModel, onClick: () -> Unit) {
 
 
     Column(
         modifier = Modifier
             .padding(top = 8.dp) // Keep top padding, horizontal managed by LazyRow
-            .clickable(onClick = onClick)
             .wrapContentHeight(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-            Card (
+        Card (
+            modifier = Modifier
+                .width(145.dp)
+                .wrapContentHeight()                   // Let card height adjust to content
+                .clickable(onClick = onClick),
+            shape = RoundedCornerShape(20.dp)
+
+        ){
+            AsyncImage(
+                model = product.image,
+                contentDescription = null,
                 modifier = Modifier
-                    .width(145.dp)
-                    .wrapContentHeight(),    // Let card height adjust to content
-                shape = RoundedCornerShape(20.dp)
-
-            ){
-                AsyncImage(
-                  model = image,
-                 contentDescription = null,
-                modifier = Modifier
-                     .fillMaxWidth()   // Image takes full width of the Column
-                      .heightIn(min = 70.dp, max = 110.dp), // Fixed height for image consistency
-                      contentScale = ContentScale.Crop
-                     )
+                    .fillMaxWidth()   // Image takes full width of the Column
+                    .heightIn(min = 70.dp, max = 110.dp), // Fixed height for image consistency
+                contentScale = ContentScale.Crop
+            )
 
 
-                Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
 
-                Text(text = name, modifier = Modifier.padding(start = 12.dp))
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(text = category, modifier = Modifier.padding(start = 12.dp))
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(text ="Price $price", modifier = Modifier.padding(start = 12.dp))
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(text = "Final Price - $finalPrice" , modifier = Modifier.padding(start = 12.dp))
-                Spacer(modifier = Modifier.height(2.dp))
+            Text(text = product.name, modifier = Modifier.padding(start = 12.dp))
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(text = product.category, modifier = Modifier.padding(start = 12.dp))
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(text ="Price ${product.price}", modifier = Modifier.padding(start = 12.dp))
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(text = "Final Price - ${product.finalPrice}" , modifier = Modifier.padding(start = 12.dp))
+            Spacer(modifier = Modifier.height(2.dp))
 
 
 
-            }
+        }
 
-    }
+      }
 }
+
+
+
+
+
+
 
 
 

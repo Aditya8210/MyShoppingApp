@@ -34,6 +34,9 @@ sealed class Routes {
     @Serializable
     object SignUpScreen
 
+    @Serializable
+    data class EachProductDetailScreen(val productId: String)
+
 }
 
 
