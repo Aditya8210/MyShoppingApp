@@ -11,6 +11,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -27,6 +28,7 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.google.firebase.auth.FirebaseAuth
+import com.wp7367.myshoppingapp.ui_layer.screens.CheckOutScreenUi
 import com.wp7367.myshoppingapp.ui_layer.screens.EachProductDetailScreen
 import com.wp7367.myshoppingapp.ui_layer.screens.HomeScreenUi
 import com.wp7367.myshoppingapp.ui_layer.screens.LoginScreen
@@ -102,7 +104,7 @@ fun AppNav(firebaseAuth: FirebaseAuth,){
                                 3 -> navController.navigate(Routes.ProfileScreen)
                             }
                         },
-                        label = { navItemList.label },
+                        label = { Text(navItemList.label) },
                         icon = {
                             Icon(navItemList.icon, contentDescription = navItemList.label)
                         }
@@ -153,6 +155,13 @@ fun AppNav(firebaseAuth: FirebaseAuth,){
 
                     val data = it.toRoute<Routes.EachProductDetailScreen>()
                     EachProductDetailScreen(navController = navController, productId= data.productId)
+                }
+
+
+                composable<Routes.CheckOutScreen> {
+
+                    val data = it.toRoute<Routes.CheckOutScreen>()
+                    CheckOutScreenUi(navController = navController, productId= data.productId)
                 }
             }
         }

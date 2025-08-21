@@ -210,7 +210,7 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
 
     fun getProductById(productId: String) {
         viewModelScope.launch (Dispatchers.IO){
-            GetProductById.getProductById(productId).collect  {
+            GetProductById.getProductByIdUseCase(productId).collect  {
                 when (it) {
                     is ResultState.Loading -> {
                         _getProductByIdSt.value  = GetProductByIdState(isLoading = true)

@@ -6,7 +6,7 @@ data class ProductModel(
     val price: String = "",
     val finalPrice: String = "",
     val category: String = "",
-    val image: String = "aditya123",
+    val image: String = "",
     val date: Long = System.currentTimeMillis(),
     val availableUnits: Int = 0,
     val isAvailable: Boolean = true,
