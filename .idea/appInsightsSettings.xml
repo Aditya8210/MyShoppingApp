@@ -9,9 +9,9 @@
               <option name="connection">
                 <ConnectionSetting>
                   <option name="appId" value="com.wp7367.myshoppingapp" />
-                  <option name="mobileSdkAppId" value="1:40033569511:android:b38ab5ee02158f940e7042" />
-                  <option name="projectId" value="myshoppingappadmin1-4921e" />
-                  <option name="projectNumber" value="40033569511" />
+                  <option name="mobileSdkAppId" value="1:635024599494:android:99a1adf5d61efa7a04aac7" />
+                  <option name="projectId" value="myshoppingapp1-13740" />
+                  <option name="projectNumber" value="635024599494" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

@@ -1,6 +1,5 @@
 package com.wp7367.myshoppingapp.ui_layer.screens
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,18 +33,26 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.wp7367.myshoppingapp.MainActivity
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CheckOutScreenUi(viewModel: MyViewModel = hiltViewModel(),navController: NavController,productId: String ) {
+fun CheckOutScreenUi(viewModel: MyViewModel = hiltViewModel(), navController: NavController, productId: String ) {
 
     val checkOutScreenSt = viewModel.getProductById.collectAsState()
+
+
+
+    // Step  - 6
+
+    val context = LocalContext.current
+    val activity = context  as? MainActivity
 
 
 
@@ -219,7 +226,16 @@ fun CheckOutScreenUi(viewModel: MyViewModel = hiltViewModel(),navController: Nav
 
                     // Continue Button
                     Button(
-                        onClick = { /* Handle navigation */ },
+                        onClick = {
+                            // Step - 7                Also Set Meta-Data in Manifest
+
+
+                            val amountInPaise = (checkOutScreenSt.value.data!!.finalPrice.toDoubleOrNull() ?: 0.0) * 100
+                            activity?.startPayment(
+                                amount = amountInPaise.toInt(),
+                                name = checkOutScreenSt.value.data!!.name
+                            )
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp),
@@ -228,16 +244,7 @@ fun CheckOutScreenUi(viewModel: MyViewModel = hiltViewModel(),navController: Nav
                         Text("Continue to Shipping")
                     }
                 }
-
-
-
             }
-
-
-
-
         }
     }
-
-
 }
