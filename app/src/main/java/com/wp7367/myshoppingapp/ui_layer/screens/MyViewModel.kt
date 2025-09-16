@@ -3,6 +3,7 @@ package com.wp7367.myshoppingapp.ui_layer.screens
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wp7367.myshoppingapp.common.ResultState
+import com.wp7367.myshoppingapp.data_layer.useCase.DeleteCartUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.GetAllCategoryUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.GetAllProductUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.GetBannerUseCase
@@ -37,6 +38,7 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
                                       private val GetBanner: GetBannerUseCase,
                                       private val SetCartItem: SetCartItemUseCase,
                                       private val GetCartItem: GetCartItemUseCase,
+                                      private val DeleteCart: DeleteCartUseCase,
 
 
 
@@ -76,6 +78,9 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
 
     private val _getCartItemSt = MutableStateFlow(GetCartItemState())
     val getCartItem = _getCartItemSt.asStateFlow()
+
+    private val _deleteCartSt = MutableStateFlow(DeleteCartState())
+    val deleteCart = _deleteCartSt.asStateFlow()
 
 
 
@@ -311,6 +316,27 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
     }
 
 
+    fun deleteCartItem(cartItemModel: cartItemModel){
+        viewModelScope.launch {
+            DeleteCart.deleteCartUseCase(cartItemModel).collectLatest {
+
+                when(it){
+                    is ResultState.Loading -> {
+                        _deleteCartSt.value = DeleteCartState(isLoading = true)
+                    }
+                    is ResultState.Success -> {
+                        _deleteCartSt.value = DeleteCartState(data = it.data)
+                    }
+                    is ResultState.Error -> {
+                        _deleteCartSt.value = DeleteCartState(error = it.exception)
+
+                    }
+                }
+            }
+        }
+    }
+
+
 
 }
 // _________________________________DATA CLASS_____________________________________
@@ -378,6 +404,13 @@ data class GetCartItemState(
     val error: String ?= null,
     val data:List<cartItemModel?> = emptyList()
 
+)
+
+data class DeleteCartState(
+
+    val isLoading: Boolean = false,
+    val error: String ?= null,
+    val data:String? = null,
 )
 
 

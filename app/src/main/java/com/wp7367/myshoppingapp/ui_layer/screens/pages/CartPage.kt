@@ -47,8 +47,12 @@ fun CartPage(modifier: Modifier = Modifier, viewModels: MyViewModel = hiltViewMo
 
     val cardState = viewModels.getCartItem.collectAsState()
 
+
+
     LaunchedEffect(Unit) {
         viewModels.getCartItem()
+
+
     }
 
 
@@ -106,7 +110,9 @@ fun CartPage(modifier: Modifier = Modifier, viewModels: MyViewModel = hiltViewMo
 
         // Checkout Button
         Button(
-            onClick = { /* TODO: handle checkout */ },
+            onClick = {
+
+            },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF38E07B))
@@ -119,6 +125,7 @@ fun CartPage(modifier: Modifier = Modifier, viewModels: MyViewModel = hiltViewMo
 
 @Composable
 fun CardItem(
+    viewModels: MyViewModel= hiltViewModel(),
    cartItem: cartItemModel,
    modifier: Modifier
 ) {
@@ -160,16 +167,20 @@ fun CardItem(
                 )
             }
 
-            Spacer(modifier = Modifier.width(8.dp)) // Spacer before total and button
+            Spacer(modifier = Modifier.width(8.dp))
 
             Column(horizontalAlignment = Alignment.End) {
                 Text("Total: Rs ${(cartItem.price.toIntOrNull() ?: 0) * cartItem.quantity}", 
                     fontWeight = FontWeight.Bold, 
-                    color = MaterialTheme.colorScheme.primary, // Used theme color
-                    style = MaterialTheme.typography.bodyLarge // Made total more prominent
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodyLarge
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                IconButton(onClick = { /* TODO remove item */ }, modifier = Modifier.size(24.dp)) { // Made IconButton smaller
+                IconButton(onClick = {
+
+                    viewModels.deleteCartItem(cartItem)
+
+                }, modifier = Modifier.size(24.dp)) {
                     Icon(Icons.Default.Close, contentDescription = "Remove item")
                 }
             }

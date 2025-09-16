@@ -253,4 +253,29 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
             close()
         }
     }
+
+    override suspend fun deleteCartItem(cartItemModel: cartItemModel): Flow<ResultState<String>> = callbackFlow{
+
+        trySend(ResultState.Loading)
+        val currentUser = FirebaseAuth.currentUser
+        if (currentUser == null) {
+            trySend(ResultState.Error("User not logged in"))
+            close()
+            return@callbackFlow
+        }
+        val cartRef = FirebaseFirestore.collection(USERS)
+            .document(currentUser.uid)
+            .collection(CART)
+            .document(cartItemModel.productId)
+            .delete()
+            .addOnSuccessListener {
+                trySend(ResultState.Success("Item Deleted Successfully"))
+            }.addOnFailureListener {
+                trySend(ResultState.Error(it.message.toString()))
+            }
+        awaitClose {
+            close()
+        }
+
+    }
 }
