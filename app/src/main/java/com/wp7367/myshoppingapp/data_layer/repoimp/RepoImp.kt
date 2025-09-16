@@ -5,6 +5,7 @@ import android.widget.Toast
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
+import com.wp7367.myshoppingapp.common.CART
 import com.wp7367.myshoppingapp.common.CATEGORY
 import com.wp7367.myshoppingapp.common.PRODUCT
 
@@ -199,7 +200,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
 
         val cartRef = FirebaseFirestore.collection(USERS)
             .document(currentUser.uid)
-            .collection("cart")
+            .collection(CART)
             .document(cartItemModel.productId) // Use productId as document ID
 
         FirebaseFirestore.runTransaction { transaction ->
@@ -221,6 +222,33 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
             trySend(ResultState.Error(e.message ?: "Failed to update cart due to an unknown error."))
         }
 
+        awaitClose {
+            close()
+        }
+    }
+
+    override suspend fun getCartItem(): Flow<ResultState<List<cartItemModel>>>  = callbackFlow {
+
+        trySend(ResultState.Loading)
+        val currentUser = FirebaseAuth.currentUser
+        if (currentUser == null) {
+            trySend(ResultState.Error("User not logged in"))
+            close()
+            return@callbackFlow
+        }
+        val cartRef = FirebaseFirestore.collection(USERS)
+            .document(currentUser.uid)
+            .collection(CART)
+        cartRef.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                trySend(ResultState.Error(error.message ?: "Failed to fetch cart due to an error."))
+                return@addSnapshotListener
+            }
+            val cartItems = snapshot?.documents?.mapNotNull { document ->
+                document.toObject(cartItemModel::class.java)
+            } ?: emptyList()
+            trySend(ResultState.Success(cartItems))
+        }
         awaitClose {
             close()
         }

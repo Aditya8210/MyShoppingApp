@@ -151,7 +151,7 @@ fun ProfilePage(viewModels: MyViewModel = hiltViewModel(), navController: NavCon
                      onClick = { isEditing.value = !isEditing.value },
                      modifier = Modifier.size(width = 70.dp, height = 40.dp),
                      shape = RoundedCornerShape(10.dp),
-                     colors = ButtonDefaults.buttonColors(containerColor = Green)
+                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF38E076))
                  ) {
                     Icon(imageVector = Icons.Rounded.Edit,contentDescription = null)
                  }
@@ -276,7 +276,7 @@ fun ProfilePage(viewModels: MyViewModel = hiltViewModel(), navController: NavCon
                     },
                     modifier = Modifier.size(width = 150.dp, height = 50.dp),
                     shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error )
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE73D77))
                 ) {
                     Text(text = "LogOut", color = Color.Black)
 

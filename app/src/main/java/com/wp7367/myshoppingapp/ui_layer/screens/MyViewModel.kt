@@ -6,6 +6,7 @@ import com.wp7367.myshoppingapp.common.ResultState
 import com.wp7367.myshoppingapp.data_layer.useCase.GetAllCategoryUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.GetAllProductUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.GetBannerUseCase
+import com.wp7367.myshoppingapp.data_layer.useCase.GetCartItemUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.GetProductByIdUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.GetUserByIdUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.LoginUserWithEmailPassUseCase
@@ -35,6 +36,7 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
                                       private val GetProductById: GetProductByIdUseCase,
                                       private val GetBanner: GetBannerUseCase,
                                       private val SetCartItem: SetCartItemUseCase,
+                                      private val GetCartItem: GetCartItemUseCase,
 
 
 
@@ -72,6 +74,9 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
     private val _setCartItemSt = MutableStateFlow(SetCartItemState())
     val setCartItem = _setCartItemSt.asStateFlow()
 
+    private val _getCartItemSt = MutableStateFlow(GetCartItemState())
+    val getCartItem = _getCartItemSt.asStateFlow()
+
 
 
     init {
@@ -79,6 +84,7 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
         getAllProduct()
         getUserData("uid")
         getBanner()
+        getCartItem()
 
 
     }
@@ -282,6 +288,28 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
         }
     }
 
+    fun getCartItem(){
+        viewModelScope.launch {
+            GetCartItem.getCartItemUseCase().collectLatest {
+                when(it) {
+                    is ResultState.Loading -> {
+                        _getCartItemSt.value = GetCartItemState(isLoading = true)
+                    }
+
+                    is ResultState.Success -> {
+                        _getCartItemSt.value = GetCartItemState(data = it.data)
+                    }
+
+                    is ResultState.Error -> {
+                        _getCartItemSt.value = GetCartItemState(error = it.exception)
+                    }
+                }
+
+            }
+
+        }
+    }
+
 
 
 }
@@ -343,6 +371,13 @@ data class SetCartItemState(
     val isLoading: Boolean = false,
     val error: String ?= null,
     val data:String? = null,
+)
+
+data class GetCartItemState(
+    val isLoading: Boolean = false,
+    val error: String ?= null,
+    val data:List<cartItemModel?> = emptyList()
+
 )
 
 

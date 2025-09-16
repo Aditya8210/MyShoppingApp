@@ -33,6 +33,8 @@ interface repo  {
   
   suspend fun setCartItem(cartItemModel: cartItemModel): Flow<ResultState<String>>
 
+  suspend fun getCartItem(): Flow<ResultState<List<cartItemModel>>>
+
 
 
 }
