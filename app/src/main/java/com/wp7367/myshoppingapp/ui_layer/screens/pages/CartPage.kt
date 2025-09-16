@@ -67,7 +67,9 @@ fun CartPage(modifier: Modifier = Modifier, viewModels: MyViewModel = hiltViewMo
 
         // Top Bar
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            IconButton(onClick = { navController.popBackStack() }) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            }
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = "Shopping Cart",
@@ -77,23 +79,23 @@ fun CartPage(modifier: Modifier = Modifier, viewModels: MyViewModel = hiltViewMo
             Text(
                 text = "Continue Shopping",
                 color = Color.Gray,
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
+        style = MaterialTheme.typography.bodySmall
+        )
+    }
 
         Spacer(modifier = Modifier.height(20.dp))
 
         // Cart Items List
         LazyColumn (modifier = Modifier.fillMaxWidth().weight(1f)) // Added weight to allow subtotal to be at bottom
         {
-           items(cardState.value.data ?: emptyList()){  cardData ->
-               cardData?.let { // Safe call for potentially null item
-                   CardItem(
-                       cartItem = it,
-                       modifier = Modifier
-                   )
-               }
-           }
+            items(cardState.value.data ?: emptyList()){  cardData ->
+                cardData?.let { // Safe call for potentially null item
+                    CardItem(
+                        cartItem = it,
+                        modifier = Modifier
+                    )
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp)) // Added spacer before subtotal

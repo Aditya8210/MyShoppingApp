@@ -7,6 +7,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
 import com.wp7367.myshoppingapp.common.CART
 import com.wp7367.myshoppingapp.common.CATEGORY
+import com.wp7367.myshoppingapp.common.FAVOURITE
 import com.wp7367.myshoppingapp.common.PRODUCT
 
 import com.wp7367.myshoppingapp.common.ResultState
@@ -15,6 +16,7 @@ import com.wp7367.myshoppingapp.common.USERS
 import com.wp7367.myshoppingapp.domain_layer.models.category
 import com.wp7367.myshoppingapp.domain_layer.models.ProductModel
 import com.wp7367.myshoppingapp.domain_layer.models.cartItemModel
+import com.wp7367.myshoppingapp.domain_layer.models.favouriteModel
 
 import com.wp7367.myshoppingapp.domain_layer.models.userData
 import com.wp7367.myshoppingapp.domain_layer.repo.repo
@@ -155,7 +157,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
     }
 
 
-    // ~Get Product by Id~
+    // ~ Get Product by Id ~
     override suspend fun getProductById(productId: String): Flow<ResultState<ProductModel>> = callbackFlow {
         trySend(ResultState.Loading)
         FirebaseFirestore.collection(PRODUCT).document(productId).get()
@@ -173,7 +175,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
         }
     }
 
-    // ~Get Banner ~
+    // ~ Get Banner ~
     override suspend fun getBanner(): Flow<ResultState<List<String>>> = callbackFlow {
         trySend(ResultState.Loading)
         FirebaseFirestore.collection("bannerdata").document("Banner").get()
@@ -189,6 +191,8 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
 
     }
 
+
+    // ~ SetCartItem ~
     override suspend fun setCartItem(cartItemModel: cartItemModel): Flow<ResultState<String>>  = callbackFlow{
         trySend(ResultState.Loading)
         val currentUser = FirebaseAuth.currentUser
@@ -227,6 +231,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
         }
     }
 
+    // ~ GetCartItem ~
     override suspend fun getCartItem(): Flow<ResultState<List<cartItemModel>>>  = callbackFlow {
 
         trySend(ResultState.Loading)
@@ -254,6 +259,8 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
         }
     }
 
+
+    // ~ DeleteCartItem ~
     override suspend fun deleteCartItem(cartItemModel: cartItemModel): Flow<ResultState<String>> = callbackFlow{
 
         trySend(ResultState.Loading)
@@ -267,6 +274,100 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
             .document(currentUser.uid)
             .collection(CART)
             .document(cartItemModel.productId)
+            .delete()
+            .addOnSuccessListener {
+                trySend(ResultState.Success("Item Deleted Successfully"))
+            }.addOnFailureListener {
+                trySend(ResultState.Error(it.message.toString()))
+            }
+        awaitClose {
+            close()
+        }
+
+    }
+
+    // ~ SetFavItem ~
+    override suspend fun setFavItem(favouriteModel: favouriteModel): Flow<ResultState<String>>  = callbackFlow{
+
+        trySend(ResultState.Loading)
+        val currentUser = FirebaseAuth.currentUser
+        if (currentUser == null) {
+            trySend(ResultState.Error("User not logged in"))
+            close()
+            return@callbackFlow
+        }
+
+        val favRef = FirebaseFirestore.collection(USERS)
+            .document(currentUser.uid)
+            .collection(FAVOURITE)
+            .document(favouriteModel.productId)
+
+        favRef.get().addOnSuccessListener { documentSnapshot ->
+            if (documentSnapshot.exists()) {
+                // Item exists, inform the user
+                trySend(ResultState.Success("Item already in favourites"))
+            } else {
+                // Item does not exist, so add it
+                favRef.set(favouriteModel)
+                    .addOnSuccessListener {
+                        trySend(ResultState.Success("Item added to favourites"))
+                    }
+                    .addOnFailureListener { e ->
+                        trySend(ResultState.Error(e.message ?: "Failed to add item to favourites."))
+                    }
+            }
+        }.addOnFailureListener { e ->
+            trySend(ResultState.Error(e.message ?: "Failed to check favourite status."))
+        }
+        awaitClose {
+            close()
+        }
+    }
+
+    override suspend fun getFavItem(): Flow<ResultState<List<favouriteModel>>>  = callbackFlow{
+
+        trySend(ResultState.Loading)
+
+        val currentUser = FirebaseAuth.currentUser
+        if (currentUser == null) {
+            trySend(ResultState.Error("User not logged in"))
+            close()
+            return@callbackFlow
+        }
+        val favRef = FirebaseFirestore.collection(USERS)
+            .document(currentUser.uid)
+            .collection(FAVOURITE)
+        favRef.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                trySend(ResultState.Error(error.message ?: "Failed to fetch favourites due to an error."))
+                return@addSnapshotListener
+            }
+            val favItems = snapshot?.documents?.mapNotNull { document ->
+                document.toObject(favouriteModel::class.java)
+            } ?: emptyList()
+            trySend(ResultState.Success(favItems))
+        }
+        awaitClose {
+            close()
+        }
+
+    }
+
+    override suspend fun deleteFavItem(favouriteModel: favouriteModel): Flow<ResultState<String>>  = callbackFlow{
+
+        trySend(ResultState.Loading)
+
+        val currentUser = FirebaseAuth.currentUser
+        if (currentUser == null) {
+            trySend(ResultState.Error("User not logged in"))
+            close()
+            return@callbackFlow
+        }
+
+        val favRef = FirebaseFirestore.collection(USERS)
+            .document(currentUser.uid)
+            .collection(FAVOURITE)
+            .document(favouriteModel.productId)
             .delete()
             .addOnSuccessListener {
                 trySend(ResultState.Success("Item Deleted Successfully"))

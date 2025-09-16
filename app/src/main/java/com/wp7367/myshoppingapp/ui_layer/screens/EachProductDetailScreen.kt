@@ -58,6 +58,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.wp7367.myshoppingapp.domain_layer.models.ProductModel
 import com.wp7367.myshoppingapp.domain_layer.models.cartItemModel
+import com.wp7367.myshoppingapp.domain_layer.models.favouriteModel
 import com.wp7367.myshoppingapp.ui_layer.screens.navigation.Routes
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,6 +71,7 @@ fun EachProductDetailScreen(productId: String ,viewModels: MyViewModel = hiltVie
     val EachProductDetailSt = viewModels.getProductById.collectAsState()
 
     val setCartItemState = viewModels.setCartItem.collectAsState()
+    val setFavSt = viewModels.setFavItem.collectAsState()
     val context = LocalContext.current // Get context for Toast
 
 
@@ -87,7 +89,7 @@ fun EachProductDetailScreen(productId: String ,viewModels: MyViewModel = hiltVie
 
     }
 
-    // New LaunchedEffect for Toast message
+    // Cart LaunchedEffect for Toast message
     LaunchedEffect(setCartItemState.value) {
         val state = setCartItemState.value
         if (state.data != null && !state.isLoading && state.error == null) {
@@ -97,6 +99,18 @@ fun EachProductDetailScreen(productId: String ,viewModels: MyViewModel = hiltVie
         } else if (state.error != null && !state.isLoading) {
             Toast.makeText(context, "Error: ${state.error}", Toast.LENGTH_SHORT).show()
             // Optional: Reset error state in ViewModel
+        }
+    }
+
+    // LaunchedEffect for Favorite Item Toast message
+    LaunchedEffect(setFavSt.value) {
+        val state = setFavSt.value
+        if (state.data != null && !state.isLoading && state.error == null) {
+            Toast.makeText(context, state.data, Toast.LENGTH_SHORT).show() // Assumes state.data is the success message string
+            // Optional: viewModels.clearFavItemStatus() // Consider if your ViewModel needs this
+        } else if (state.error != null && !state.isLoading) {
+            Toast.makeText(context, "Error adding to wishlist: ${state.error}", Toast.LENGTH_SHORT).show()
+            // Optional: viewModels.clearFavItemError() // Consider if your ViewModel needs this
         }
     }
 
@@ -285,7 +299,18 @@ fun EachProductDetailScreen(productId: String ,viewModels: MyViewModel = hiltVie
                 }
 
                 TextButton(
-                    onClick = { /*TODO*/ },
+                    onClick = {
+                        val favData = favouriteModel(
+                            productId = EachProductDetailSt.value.data!!.productId,
+                            name = EachProductDetailSt.value.data!!.name,
+                            image = EachProductDetailSt.value.data!!.image,
+                            finalPrice = EachProductDetailSt.value.data!!.finalPrice,
+                            category = EachProductDetailSt.value.data!!.category,
+                            description = EachProductDetailSt.value.data!!.description,
+
+                        )
+                        viewModels.setFavItem(favData)
+                    },
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                         .padding(start = 22.dp, end = 22.dp)
                 ) {

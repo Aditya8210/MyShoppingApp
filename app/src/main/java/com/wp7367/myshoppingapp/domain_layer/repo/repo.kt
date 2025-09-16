@@ -5,6 +5,7 @@ import com.wp7367.myshoppingapp.common.ResultState
 import com.wp7367.myshoppingapp.domain_layer.models.category
 import com.wp7367.myshoppingapp.domain_layer.models.ProductModel
 import com.wp7367.myshoppingapp.domain_layer.models.cartItemModel
+import com.wp7367.myshoppingapp.domain_layer.models.favouriteModel
 
 import com.wp7367.myshoppingapp.domain_layer.models.userData
 import kotlinx.coroutines.flow.Flow
@@ -36,6 +37,12 @@ interface repo  {
   suspend fun getCartItem(): Flow<ResultState<List<cartItemModel>>>
 
   suspend fun deleteCartItem(cartItemModel: cartItemModel): Flow<ResultState<String>>
+
+  suspend fun setFavItem(favouriteModel: favouriteModel): Flow<ResultState<String>>
+
+  suspend fun getFavItem(): Flow<ResultState<List<favouriteModel>>>
+
+  suspend fun deleteFavItem(favouriteModel: favouriteModel): Flow<ResultState<String>>
 
 
 

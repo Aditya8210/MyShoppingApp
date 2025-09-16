@@ -141,7 +141,7 @@ fun AppNav(firebaseAuth: FirebaseAuth,){
                         HomeScreenUi(navController=navController)
                     }
                     composable <Routes.FavoriteScreen>{
-                        FavoritePage()
+                        FavoritePage(navController = navController)
                     }
                     composable <Routes.CartScreen> {
                         CartPage(navController = navController)
