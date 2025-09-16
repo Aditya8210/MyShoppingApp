@@ -82,6 +82,8 @@ fun  LoginScreen(viewModel: MyViewModel = hiltViewModel(),navController: NavCont
 
 //    ~ Screen UI ~
 
+
+
     Column (modifier = Modifier
              .fillMaxSize()
              .fillMaxWidth()
@@ -147,7 +149,8 @@ fun  LoginScreen(viewModel: MyViewModel = hiltViewModel(),navController: NavCont
             OutlinedTextField(value  = email.value,
                 onValueChange = {email.value = it},
                 label = { Text(text = "Gmail")
-                }
+                },
+                singleLine = true,
             )
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -155,7 +158,9 @@ fun  LoginScreen(viewModel: MyViewModel = hiltViewModel(),navController: NavCont
 
             OutlinedTextField(value  =password.value ,
                 onValueChange = {password.value = it},
-                label = {Text(text = "Password")}
+                label = {Text(text = "Password")},
+                singleLine = true,
+
             )
 
 

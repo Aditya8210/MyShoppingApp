@@ -1,5 +1,6 @@
 package com.wp7367.myshoppingapp.ui_layer.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -47,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -54,13 +56,21 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.wp7367.myshoppingapp.domain_layer.models.ProductModel
+import com.wp7367.myshoppingapp.domain_layer.models.cartItemModel
 import com.wp7367.myshoppingapp.ui_layer.screens.navigation.Routes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EachProductDetailScreen(productId: String ,viewModels: MyViewModel = hiltViewModel(), navController: NavController) {
+fun EachProductDetailScreen(productId: String ,viewModels: MyViewModel = hiltViewModel(), navController: NavController,
+
+
+) {
 
     val EachProductDetailSt = viewModels.getProductById.collectAsState()
+
+    val setCartItemState = viewModels.setCartItem.collectAsState()
+    val context = LocalContext.current // Get context for Toast
 
 
 
@@ -70,9 +80,24 @@ fun EachProductDetailScreen(productId: String ,viewModels: MyViewModel = hiltVie
     var selectedColor by remember { mutableStateOf(Color(0xFFE57373)) }
 
 
+
+
     LaunchedEffect(key1 = Unit){
        viewModels.getProductById(productId)
 
+    }
+
+    // New LaunchedEffect for Toast message
+    LaunchedEffect(setCartItemState.value) {
+        val state = setCartItemState.value
+        if (state.data != null && !state.isLoading && state.error == null) {
+            Toast.makeText(context, state.data, Toast.LENGTH_SHORT).show()
+            // Optional: Add a call to a new ViewModel function here to reset the state
+            // e.g., viewModels.clearCartItemStatus()
+        } else if (state.error != null && !state.isLoading) {
+            Toast.makeText(context, "Error: ${state.error}", Toast.LENGTH_SHORT).show()
+            // Optional: Reset error state in ViewModel
+        }
     }
 
     when{
@@ -239,7 +264,19 @@ fun EachProductDetailScreen(productId: String ,viewModels: MyViewModel = hiltVie
 
                 Spacer(Modifier.height(10.dp))
                 Button(
-                    onClick = { /*TODO*/ },
+                    onClick = {
+
+                        val data = cartItemModel(
+                            productId = EachProductDetailSt.value.data!!.productId,
+                            name = EachProductDetailSt.value.data!!.name,
+                            imageUrl = EachProductDetailSt.value.data!!.image,
+                            price = EachProductDetailSt.value.data!!.finalPrice,
+                            quantity = quantity,
+
+                        )
+                        viewModels.setCartItem(data)
+
+                    },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
                     modifier = Modifier.fillMaxWidth().height(50.dp)
                         .padding(start = 22.dp, end = 22.dp)

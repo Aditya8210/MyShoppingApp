@@ -1,6 +1,8 @@
 package com.wp7367.myshoppingapp.ui_layer.screens.pages
 
 import android.widget.Toast
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,20 +11,26 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Logout
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -30,8 +38,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Green
-import androidx.compose.ui.graphics.Color.Companion.Red
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -97,9 +105,98 @@ fun ProfilePage(viewModels: MyViewModel = hiltViewModel(), navController: NavCon
     }
     else if(profileSt.value.data != null){
 
+
+        Column(modifier = Modifier.fillMaxSize()
+            .background(color = Color.White))
+        {
+
+
+            Row(
+                modifier = Modifier.fillMaxWidth())
+
+            {
+                Box(modifier = Modifier
+                    .padding(top = 60.dp, start = 12.dp)){
+                    Image(painter = painterResource(id = com.wp7367.myshoppingapp.R.drawable.profile332553),contentDescription = null,
+                        Modifier.size(140.dp))
+
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(235.dp)
+                        .offset(x = 20.dp, y = (-60).dp)
+                ) {
+
+                    Image(
+                        painter = painterResource(id = com.wp7367.myshoppingapp.R.drawable.circle332212),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize())
+
+                }
+
+            }
+
+         Row( modifier = Modifier.padding(start = 15.dp))
+         {
+             Text(text = "My Profile:",
+             fontSize = MaterialTheme.typography.headlineLarge.fontSize,
+             )
+
+
+             Spacer(modifier = Modifier.padding(10.dp))
+
+             if (isEditing.value == false) {
+                 OutlinedButton(
+                     onClick = { isEditing.value = !isEditing.value },
+                     modifier = Modifier.size(width = 70.dp, height = 40.dp),
+                     shape = RoundedCornerShape(10.dp),
+                     colors = ButtonDefaults.buttonColors(containerColor = Green)
+                 ) {
+                    Icon(imageVector = Icons.Rounded.Edit,contentDescription = null)
+                 }
+             }else {
+
+                 OutlinedButton(
+                     onClick = {
+                         val updatedata = userData(
+                             firstName = firstname.value,
+                             lastName = lastname.value,
+                             email = email.value,
+                             phoneNumber = phone.value,
+                             address = address.value
+                         )
+
+                         viewModels.updateUser(updatedata)
+
+                         isEditing.value = !isEditing.value
+
+
+
+                         Toast.makeText(context, "Profile Updated", Toast.LENGTH_SHORT).show()
+                     },
+
+                     modifier = Modifier.size(width = 100.dp, height = 40.dp),
+
+                     shape = RoundedCornerShape(10.dp),
+                     colors = ButtonDefaults.buttonColors(containerColor = Green)
+                 ) {
+                     Text(text = "Save", color = Color.Blue)
+                     Icon(imageVector = Icons.Rounded.CheckCircle,contentDescription = null)
+                 }
+             }
+
+
+
+         }
+
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+
         Column (modifier = Modifier.fillMaxSize().padding(10.dp)
-            .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.Center,
+
+
 
         )
         {
@@ -148,6 +245,7 @@ fun ProfilePage(viewModels: MyViewModel = hiltViewModel(), navController: NavCon
                 modifier = Modifier.fillMaxWidth(),
                 readOnly = if (isEditing.value) false else true,
                 onValueChange = {phone.value = it},
+                singleLine = true,
                 label = { Text(text = "Phone") },
 
             )
@@ -160,66 +258,60 @@ fun ProfilePage(viewModels: MyViewModel = hiltViewModel(), navController: NavCon
                 label = { Text(text = "Address") },
 
             )
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(30.dp))
 
-            Row(modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp))
+            Column (modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                )
+
             {
-                if (isEditing.value == false) {
-                    OutlinedButton(
-                        onClick = { isEditing.value = !isEditing.value },
-                        modifier = Modifier.size(width = 200.dp, height = 50.dp),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Green)
-                    ) {
-                        Text(text = "Edit Profile", color = Color.Blue)
-                    }
-                }else {
-
-                    OutlinedButton(
-                        onClick = {
-                            val updatedata = userData(
-                                firstName = firstname.value,
-                                lastName = lastname.value,
-                                email = email.value,
-                                phoneNumber = phone.value,
-                                address = address.value
-                            )
-
-                            viewModels.updateUser(updatedata)
-
-                             isEditing.value = !isEditing.value
 
 
-
-                            Toast.makeText(context, "Profile Updated", Toast.LENGTH_SHORT).show()
-                        },
-
-                        modifier = Modifier.size(width = 200.dp, height = 50.dp),
-
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Green)
-                    ) {
-                        Text(text = "Save Profile", color = Color.Blue)
-                    }
-                }
 
                 OutlinedButton(
                     onClick = {
                         firebaseAuth.signOut()
                         navController.navigate(Routes.LogInScreen)
                     },
-                    modifier = Modifier.size(width = 200.dp, height = 50.dp),
+                    modifier = Modifier.size(width = 150.dp, height = 50.dp),
                     shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Red)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error )
                 ) {
                     Text(text = "LogOut", color = Color.Black)
+
+                    Icon(imageVector = Icons.Rounded.Logout,contentDescription = null)
                 }
+
 
             }
 
 
+            Column(modifier = Modifier.fillMaxWidth().fillMaxSize(),
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.Bottom) {
+
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Box(modifier = Modifier.size(225.dp)
+                        .offset(x = (-60).dp, y = (+12).dp)
+                    ){
+
+
+                        Image(painter = painterResource(id = com.wp7367.myshoppingapp.R.drawable.circle33221),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize())
+                    }
+
+                }
+            }
+
+          }
+
+
+
+
         }
+
 
     }
     else { // This new block handles the case where data is null, not loading, and no error

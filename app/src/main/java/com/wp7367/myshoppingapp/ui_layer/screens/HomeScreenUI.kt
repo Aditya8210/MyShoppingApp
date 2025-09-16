@@ -1,12 +1,10 @@
 package com.wp7367.myshoppingapp.ui_layer.screens
 
-import android.widget.Toast
+
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -17,13 +15,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items // Keep this import
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -34,6 +32,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Text
@@ -43,6 +42,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -54,6 +54,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.tbuonomo.viewpagerdotsindicator.compose.DotsIndicator
+import com.tbuonomo.viewpagerdotsindicator.compose.model.DotGraphic
+import com.tbuonomo.viewpagerdotsindicator.compose.type.ShiftIndicatorType
 import com.wp7367.myshoppingapp.domain_layer.models.ProductModel
 import com.wp7367.myshoppingapp.domain_layer.models.category
 import com.wp7367.myshoppingapp.ui_layer.screens.navigation.Routes
@@ -61,13 +64,17 @@ import com.wp7367.myshoppingapp.ui_layer.screens.navigation.Routes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreenUi(viewModels: MyViewModel = hiltViewModel(),navController: NavController) {
+fun HomeScreenUi(viewModels: MyViewModel = hiltViewModel(),navController: NavController,modifier: Modifier = Modifier) {
 
 
     //  -- Here State is Collect --
 
     val ctState = viewModels.getAllCategory.collectAsState()              // ~ Combine Two State in Single State ~
     val productState = viewModels.getAllProduct.collectAsState()
+
+    val bannerSate = viewModels.getBanner.collectAsState()
+
+
 
 
 
@@ -77,6 +84,8 @@ fun HomeScreenUi(viewModels: MyViewModel = hiltViewModel(),navController: NavCon
     LaunchedEffect(key1 = Unit) {
         viewModels.getAllCategory()
         viewModels.getAllProduct()
+        viewModels.getBanner()
+
     }
 
 
@@ -170,31 +179,36 @@ fun HomeScreenUi(viewModels: MyViewModel = hiltViewModel(),navController: NavCon
 
 //        Banner
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 145.dp, max = 159.dp)
-                    .padding(9.dp)
+      Column(modifier = modifier
+        .fillMaxWidth()
+        .heightIn(min = 145.dp, max = 159.dp)
+        .padding(9.dp))
+      {
+
+        val pagerState = rememberPagerState(0){
+            bannerSate.value.data?.size ?: 0
+
+        }
+
+        HorizontalPager(state = pagerState,pageSpacing = 20.dp,) {
+
+            AsyncImage(model = bannerSate.value.data?.get(it),
+                contentDescription = "Banner Image",
+                modifier = Modifier.fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp)),
+                contentScale = ContentScale.Crop,)
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        DotsIndicator(
+            dotCount = bannerSate.value.data?.size ?: 0,
+            type = ShiftIndicatorType(dotsGraphic = DotGraphic(color = MaterialTheme.colorScheme.primary)),
+            pagerState = pagerState
+        )
+    }
 
 
-            ) {
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(color = Color.LightGray, shape = RoundedCornerShape(10.dp))
-                        .padding(4.dp), // Padding for content inside banner
-                    contentAlignment = Alignment.Center,
-
-                    ) {
-                    Text(
-                        text = "Banner",
-                        fontSize = 32.sp,
-                        color = Color.Blue,
-                    )
-                }
-
-            }
 
             // Flash Sale Title Row
             Row(

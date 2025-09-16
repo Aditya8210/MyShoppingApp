@@ -227,6 +227,7 @@ fun CheckOutScreenUi(viewModel: MyViewModel = hiltViewModel(), navController: Na
                     // Continue Button
                     Button(
                         onClick = {
+
                             // Step - 7                Also Set Meta-Data in Manifest
 
 

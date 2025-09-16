@@ -63,6 +63,7 @@ dependencies {
     implementation(libs.googleid)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.auth)
+    implementation(libs.firebase.messaging)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -92,6 +93,7 @@ dependencies {
 
 
 
+    implementation("com.tbuonomo:dotsindicator:5.1.0")
 
     implementation("com.razorpay:checkout:1.6.40")                          // Step - 1
 

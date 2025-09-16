@@ -5,14 +5,17 @@ import androidx.lifecycle.viewModelScope
 import com.wp7367.myshoppingapp.common.ResultState
 import com.wp7367.myshoppingapp.data_layer.useCase.GetAllCategoryUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.GetAllProductUseCase
+import com.wp7367.myshoppingapp.data_layer.useCase.GetBannerUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.GetProductByIdUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.GetUserByIdUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.LoginUserWithEmailPassUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.RegisterUserWithEmailPassUseCase
+import com.wp7367.myshoppingapp.data_layer.useCase.SetCartItemUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.UpdateUserByIdUseCase
 
 import com.wp7367.myshoppingapp.domain_layer.models.category
 import com.wp7367.myshoppingapp.domain_layer.models.ProductModel
+import com.wp7367.myshoppingapp.domain_layer.models.cartItemModel
 import com.wp7367.myshoppingapp.domain_layer.models.userData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -29,11 +32,13 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
                                       private val LoginUser: LoginUserWithEmailPassUseCase,
                                       private val GetUserData: GetUserByIdUseCase,
                                       private val UpdateUser: UpdateUserByIdUseCase,
-                                      private val GetProductById: GetProductByIdUseCase
+                                      private val GetProductById: GetProductByIdUseCase,
+                                      private val GetBanner: GetBannerUseCase,
+                                      private val SetCartItem: SetCartItemUseCase,
 
 
 
-) : ViewModel() {
+                                      ) : ViewModel() {
 
 
     //   ~ Here State is Create ~
@@ -61,12 +66,20 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
     private val _getProductByIdSt = MutableStateFlow(GetProductByIdState())
     val getProductById = _getProductByIdSt.asStateFlow()
 
+    private val _getBannerSt = MutableStateFlow(GetBannerState())
+    val getBanner = _getBannerSt.asStateFlow()
+
+    private val _setCartItemSt = MutableStateFlow(SetCartItemState())
+    val setCartItem = _setCartItemSt.asStateFlow()
+
 
 
     init {
         getAllCategory()
         getAllProduct()
         getUserData("uid")
+        getBanner()
+
 
     }
 
@@ -115,6 +128,26 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
 
         }
 
+    }
+
+    fun getBanner(){
+        viewModelScope.launch {
+            GetBanner.getBannerUseCase().collectLatest {
+                when(it){
+                    is ResultState.Loading -> {
+                        _getBannerSt.value = GetBannerState(isLoading = true)
+                    }
+                    is ResultState.Success -> {
+                        _getBannerSt.value = GetBannerState(data = it.data)
+                    }
+                    is ResultState.Error -> {
+                        _getBannerSt.value = GetBannerState(error = it.exception)
+
+                    }
+                }
+            }
+
+        }
     }
 
 
@@ -228,6 +261,27 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
         }
     }
 
+    fun setCartItem(cartItemModel: cartItemModel) {
+        viewModelScope.launch {
+            SetCartItem.setCartItemUseCase(cartItemModel).collectLatest {
+                when (it) {
+                    is ResultState.Loading -> {
+                        _setCartItemSt.value = SetCartItemState(isLoading = true)
+                    }
+
+                    is ResultState.Success -> {
+                        _setCartItemSt.value = SetCartItemState(data = it.data)
+                    }
+
+                    is ResultState.Error -> {
+                        _setCartItemSt.value = SetCartItemState(error = it.exception)
+                    }
+
+                }
+            }
+        }
+    }
+
 
 
 }
@@ -277,4 +331,18 @@ data class UpdateDataState(
         val error: String ?= null,
         val data:ProductModel? = null
     )
+
+data class GetBannerState(
+    val isLoading: Boolean = false,
+    val error: String ?= null,
+    val data:List<String>? = null
+)
+
+data class SetCartItemState(
+
+    val isLoading: Boolean = false,
+    val error: String ?= null,
+    val data:String? = null,
+)
+
 
