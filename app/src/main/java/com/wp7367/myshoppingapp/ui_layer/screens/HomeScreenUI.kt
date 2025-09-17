@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,8 +21,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items // Keep this import
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
+import com.google.accompanist.pager.HorizontalPager
+import com.google.accompanist.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -54,15 +55,14 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.tbuonomo.viewpagerdotsindicator.compose.DotsIndicator
-import com.tbuonomo.viewpagerdotsindicator.compose.model.DotGraphic
-import com.tbuonomo.viewpagerdotsindicator.compose.type.ShiftIndicatorType
+import com.google.accompanist.pager.HorizontalPagerIndicator
 import com.wp7367.myshoppingapp.domain_layer.models.ProductModel
 import com.wp7367.myshoppingapp.domain_layer.models.category
 import com.wp7367.myshoppingapp.ui_layer.screens.navigation.Routes
+import kotlinx.coroutines.delay
 
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, com.google.accompanist.pager.ExperimentalPagerApi::class)
 @Composable
 fun HomeScreenUi(viewModels: MyViewModel = hiltViewModel(),navController: NavController,modifier: Modifier = Modifier) {
 
@@ -179,32 +179,47 @@ fun HomeScreenUi(viewModels: MyViewModel = hiltViewModel(),navController: NavCon
 
 //        Banner
 
-      Column(modifier = modifier
+      Box(modifier = modifier // Changed Column to Box
         .fillMaxWidth()
-        .heightIn(min = 145.dp, max = 159.dp)
+        .heightIn(min = 145.dp, max = 170.dp) // Adjusted max height for indicator
         .padding(9.dp))
       {
 
-        val pagerState = rememberPagerState(0){
-            bannerSate.value.data?.size ?: 0
+        val pagerState = rememberPagerState(initialPage = 0)
 
+        // Auto-scroll effect
+        LaunchedEffect(key1 = bannerSate.value.data?.size) { // Observe banner data size for changes
+            val pageCount = bannerSate.value.data?.size ?: 0
+            if (pageCount > 0) { // ensure there are pages to scroll
+                while (true) {
+                    delay(3000) // 3-second delay
+                    val nextPage = (pagerState.currentPage + 1) % pageCount
+                    pagerState.animateScrollToPage(nextPage)
+                }
+            }
         }
 
-        HorizontalPager(state = pagerState,pageSpacing = 20.dp,) {
-
-            AsyncImage(model = bannerSate.value.data?.get(it),
+        HorizontalPager(
+            count = bannerSate.value.data?.size ?: 0,
+            state = pagerState,
+            itemSpacing = 20.dp, // Changed from pageSpacing to itemSpacing for Accompanist
+            modifier = Modifier.fillMaxWidth()
+        ) { page -> // page is the index in Accompanist
+            AsyncImage(model = bannerSate.value.data?.get(page),
                 contentDescription = "Banner Image",
                 modifier = Modifier.fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp)),
                 contentScale = ContentScale.Crop,)
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
-
-        DotsIndicator(
-            dotCount = bannerSate.value.data?.size ?: 0,
-            type = ShiftIndicatorType(dotsGraphic = DotGraphic(color = MaterialTheme.colorScheme.primary)),
-            pagerState = pagerState
+        HorizontalPagerIndicator(
+            pagerState = pagerState,
+            pageCount = pagerState.pageCount, // Use pagerState.pageCount
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 8.dp),
+            activeColor = MaterialTheme.colorScheme.primary,
+            inactiveColor = Color.LightGray
         )
     }
 
