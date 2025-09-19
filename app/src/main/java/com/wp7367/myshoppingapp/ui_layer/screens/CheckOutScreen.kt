@@ -1,8 +1,12 @@
 package com.wp7367.myshoppingapp.ui_layer.screens
 
+import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,17 +15,21 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items // Added for LazyColumn items extension
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.Icon
+import androidx.compose.material.RadioButton
+import androidx.compose.material.Scaffold
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,218 +41,315 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.wp7367.myshoppingapp.MainActivity
+import com.wp7367.myshoppingapp.domain_layer.models.ProductModel
+import com.wp7367.myshoppingapp.domain_layer.models.cartItemModel
+import com.wp7367.myshoppingapp.ui_layer.screens.navigation.Routes
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CheckOutScreenUi(viewModel: MyViewModel = hiltViewModel(), navController: NavController, productId: String ) {
+fun CheckOutScreenUi(
+    viewModel: MyViewModel = hiltViewModel(),
+    navController: NavController,
+    productId: String? // Nullable for cart checkout
+) {
 
-    val checkOutScreenSt = viewModel.getProductById.collectAsState()
+    val productState by viewModel.getProductById.collectAsState()
+    val cartState by viewModel.getCartItem.collectAsState()
 
-
-
-    // Step  - 6
+    var selectedPaymentMethod by remember { mutableStateOf("Online payment") }
+    val paymentOptions = listOf("Online payment", "Cash on delivery")
 
     val context = LocalContext.current
-    val activity = context  as? MainActivity
+    val activity = context as? MainActivity
 
+    LaunchedEffect(key1 = productId) { // Re-trigger if productId changes
+        if (productId != null) {
+            viewModel.getProductById(productId)
+        } else {
 
-
-    val scrollState = rememberScrollState()
-    var email by remember { mutableStateOf("") }
-    var firstName by remember { mutableStateOf("") }
-    var lastName by remember { mutableStateOf("") }
-    var address by remember { mutableStateOf("") }
-    var city by remember { mutableStateOf("") }
-    var pinCode by remember { mutableStateOf("") }
-    var contactNumber by remember { mutableStateOf("") }
-    var selectedMethod by remember { mutableStateOf("free") }
-
-
-
-
-    LaunchedEffect(key1 = Unit){
-       viewModel.getProductById(productId)
-
+            viewModel.getCartItem() // Optional: if you want to ensure fresh data for cart checkout
+        }
     }
 
-    when{
-        checkOutScreenSt.value.isLoading ->{
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center)
-            {
+    val isLoading = if (productId != null) productState.isLoading else cartState.isLoading
+    val error = if (productId != null) productState.error else cartState.error
+    val productData = productState.data
+    val cartData = cartState.data
+
+    val currentTotalAmount: Double = remember(productId, productData, cartData) {
+        if (productId != null) {
+            productData?.finalPrice?.toDoubleOrNull() ?: 0.0
+        } else {
+            cartData?.sumOf { it?.price?.toDoubleOrNull() ?: 0.0 } ?: 0.0
+        }
+    }
+
+    val primaryItemName: String = remember(productId, productData, cartData) {
+        if (productId != null) {
+            productData?.name ?: "Product"
+        } else {
+            cartData?.firstOrNull()?.name ?: "Your Order"
+        }
+    }
+
+
+    when {
+        isLoading -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
-
         }
-        checkOutScreenSt.value.error != null ->{
-            Text(text = checkOutScreenSt.value.error!!)
 
+        error != null -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(text = "Error: $error")
+            }
         }
-        checkOutScreenSt.value.data != null ->{
 
-
-//            Column {
-//                Text(checkOutScreenSt.value.data!!.name)
-//            }
-
-            Scaffold (modifier = Modifier.fillMaxSize()){innerPadding ->        // Apply Scaffold to get Extra Space
-
-
+        else -> {
+            Scaffold { innerPadding ->
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding)
-                        .padding(10.dp)
-                        .verticalScroll(scrollState)                   // Apply After innerPadding then it work
-                ) {
-                    // Top bar
-                    Text(
-                        text = "Shipping",
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
+                        .background(color = Color.White)
 
-                    // Cart Item
+                        .padding(16.dp) // Adjusted padding
+                ) {
+
+                    // Top Bar
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 17.dp)) {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            androidx.compose.material3.Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back"
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Payment:",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(
+                            text = "Continue Shopping",
+                            color = Color.Gray,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(5.dp))
+
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp) // Added vertical padding
                     ) {
-                        Row(modifier = Modifier.padding(12.dp)) {
-                           AsyncImage(
-                               model = checkOutScreenSt.value.data!!.image,
-                               contentDescription = null,
-                               modifier = Modifier
-                                   .size(80.dp)
-                                   .clip(RoundedCornerShape(8.dp))
-                           )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column {
-                                Text(checkOutScreenSt.value.data!!.name, style = MaterialTheme.typography.bodyLarge)
-                                Text("UK10", style = MaterialTheme.typography.bodySmall)
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text("₹=" + checkOutScreenSt.value.data!!.finalPrice, style = MaterialTheme.typography.displayMedium)
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "Address:",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Row(modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    // Replace with dynamic address data
+                                    Text(text = "Name: Aditya ", style = MaterialTheme.typography.bodyLarge)
+                                    Text(text = "Address Line 1", style = MaterialTheme.typography.bodyMedium)
+                                    Text(text = "Address Line 2", style = MaterialTheme.typography.bodyMedium)
+                                    Text(text = "City, State, Zip", style = MaterialTheme.typography.bodyMedium)
+                                    Text(text = "Country", style = MaterialTheme.typography.bodyMedium)
+                                }
+                                
+                                
+                                IconButton(onClick =
+                                    {
+                                        navController.navigate(Routes.EditAddressScreen)
+
+                                    
+                                }, modifier = Modifier.padding(end = 8.dp)
+                                ) {
+                                    androidx.compose.material3.Icon(
+                                        imageVector = Icons.Rounded.EditNote,
+                                        contentDescription = "Edit",
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(45.dp)
+                                    )
+                                }
                             }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                    // Contact Information
-                    Text("Contact Information:", style = MaterialTheme.typography.bodyMedium)
-                    OutlinedTextField(
-                        value = email,
-                        onValueChange = { email = it },
-                        label = { Text("Email") },
-                        modifier = Modifier.fillMaxWidth()
+                    Text(
+                        text = "Shopping List",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Dynamic Shopping List
+                    if (productId != null) { // Direct Buy
+                        if (productData != null) {
+                            ProductItem(productItem = productData)
+                        } else {
+                            Text("Product details not available.")
+                        }
+                    } else { // Cart Checkout
+                        if (!cartData.isNullOrEmpty()) {
+                            LazyColumn(
+                                modifier = Modifier.weight(1f, fill = false), // Allow column to scroll if content exceeds space
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(cartData.filterNotNull(), key = { cartItem -> cartItem.productId ?: cartItem.hashCode() }) { item ->
+                                    GetCartItem(cardItem = item)
+                                }
+                            }
+                        } else {
+                            Text("Your cart is empty.")
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Shipping Address
-                    Text("Shipping Address:", style = MaterialTheme.typography.bodyMedium)
-                    OutlinedTextField(
-                        value = firstName,
-                        onValueChange = { firstName = it },
-                        label = { Text("First Name") },
-                        modifier = Modifier.fillMaxWidth()
+                    Text(
+                        text = "Shipping Method",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                     )
-                    OutlinedTextField(
-                        value = lastName,
-                        onValueChange = { lastName = it },
-                        label = { Text("Last Name") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = address,
-                        onValueChange = { address = it },
-                        label = { Text("Address") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = city,
-                        onValueChange = { city = it },
-                        label = { Text("City") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = pinCode,
-                        onValueChange = { pinCode = it },
-                        label = { Text("PinCode") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = contactNumber,
-                        onValueChange = { contactNumber = it },
-                        label = { Text("Contact Number") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            paymentOptions.forEach { paymentOption ->
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { selectedPaymentMethod = paymentOption }
+                                        .padding(vertical = 8.dp) // Adjusted padding
+                                ) {
+                                    RadioButton(
+                                        selected = (selectedPaymentMethod == paymentOption),
+                                        onClick = { selectedPaymentMethod = paymentOption }
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(text = paymentOption, style = MaterialTheme.typography.bodyLarge)
+                                    Spacer(Modifier.weight(1f))
+                                    Text(
+                                        text = "₹${"%.2f".format(currentTotalAmount)}", // Formatted total
+                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                                    )
+                                }
+                            }
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Shipping Method
-                    Text("Shipping Method:", style = MaterialTheme.typography.bodyMedium)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { selectedMethod = "free" }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = selectedMethod == "free",
-                            onClick = { selectedMethod = "free" }
-                        )
-                        Text("Standard FREE delivery over ₹4500", modifier = Modifier.padding(start = 8.dp))
-                        Spacer(modifier = Modifier.weight(1f))
-                        Text("Free")
-                    }
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { selectedMethod = "cod" }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = selectedMethod == "cod",
-                            onClick = { selectedMethod = "cod" }
-                        )
-                        Text("Cash on Delivery over ₹500 (Free Delivery, COD processing ₹50)",
-                            modifier = Modifier.padding(start = 8.dp))
-                        Spacer(modifier = Modifier.weight(1f))
-                        Text("₹100")
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Continue Button
                     Button(
                         onClick = {
+                            if (currentTotalAmount <= 0) {
+                                Toast.makeText(context, "Cannot proceed with zero amount.", Toast.LENGTH_SHORT).show()
+                                return@Button
+                            }
 
-                            // Step - 7                Also Set Meta-Data in Manifest
+                     //    For razorpay :Step 7  and Also Changes in Manifest Like Meta-Data
 
-
-                            val amountInPaise = (checkOutScreenSt.value.data!!.finalPrice.toDoubleOrNull() ?: 0.0) * 100
-                            activity?.startPayment(
-                                amount = amountInPaise.toInt(),
-                                name = checkOutScreenSt.value.data!!.name
-                            )
+                            if (selectedPaymentMethod == "Online payment") {
+                                val amountInPaise = (currentTotalAmount * 100).toInt()
+                                activity?.startPayment(
+                                    amount = amountInPaise,
+                                    name = primaryItemName
+                                )
+                            } else { // Cash on delivery
+                                // Implement your order placement logic for COD here
+                                Toast.makeText(context, "Order Placed Successfully (Cash on Delivery)", Toast.LENGTH_SHORT).show()
+                                // Example: viewModel.placeOrder(cartData or productData, "COD")
+                                // Example: navController.navigate("orderConfirmationScreen")
+                            }
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(50.dp),
-                        shape = RoundedCornerShape(12.dp)
+                            .height(50.dp) // Adjusted height
+                            .padding(horizontal = 8.dp)
                     ) {
-                        Text("Continue to Shipping")
+                        Text(
+                            text = if (selectedPaymentMethod == "Cash on delivery") "Order Now" else "Pay Now (₹${"%.2f".format(currentTotalAmount)})",
+                            style = MaterialTheme.typography.labelLarge // Using MaterialTheme
+                        )
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun GetCartItem(cardItem: cartItemModel) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            AsyncImage(
+                model = cardItem.imageUrl,
+                contentDescription = cardItem.name,
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color.Gray.copy(alpha = 0.1f)) // Placeholder background
+                , contentScale = ContentScale.Crop
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(cardItem.name, style = MaterialTheme.typography.titleMedium, maxLines = 2) // Using titleMedium
+                // Assuming size or other details might be here
+                // Text("Size: ${cardItem.size ?: "N/A"}", style = MaterialTheme.typography.bodySmall)
+                Spacer(modifier = Modifier.height(4.dp))
+                 Text(
+                    "₹${cardItem.price?.toDoubleOrNull()?.let { "%.2f".format(it) } ?: "N/A"}", //Formatted Price
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold) // Using bodyLarge
+                )
+            }
+            // Optional: Quantity, remove button etc.
+        }
+    }
+}
+
+@Composable
+fun ProductItem(productItem: ProductModel) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            AsyncImage(
+                model = productItem.image,
+                contentDescription = productItem.name,
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color.Gray.copy(alpha = 0.1f)) // Placeholder background
+                , contentScale = ContentScale.Crop
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(productItem.name, style = MaterialTheme.typography.titleMedium, maxLines = 2) // Using titleMedium
+                 
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    "₹${productItem.finalPrice?.toDoubleOrNull()?.let { "%.2f".format(it) } ?: "N/A"}", // Formatted Price
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold) // Using bodyLarge
+                )
             }
         }
     }

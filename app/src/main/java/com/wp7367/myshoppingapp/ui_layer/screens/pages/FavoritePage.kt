@@ -180,7 +180,7 @@ fun FavItem(favItem: favouriteModel, viewModels: MyViewModel= hiltViewModel())
                                     Text("Move to Cart")
                             }
                     }
-                    // Remove Button
+                    // Delete Button
                     IconButton(onClick = {
                             viewModels.deleteFavItem(favItem)
                     }) {

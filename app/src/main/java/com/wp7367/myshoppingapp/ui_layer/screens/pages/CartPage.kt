@@ -1,5 +1,6 @@
 package com.wp7367.myshoppingapp.ui_layer.screens.pages
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -34,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -41,11 +43,14 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.wp7367.myshoppingapp.domain_layer.models.cartItemModel
 import com.wp7367.myshoppingapp.ui_layer.screens.MyViewModel
+import com.wp7367.myshoppingapp.ui_layer.screens.navigation.Routes // Added import
 
 @Composable
 fun CartPage(modifier: Modifier = Modifier, viewModels: MyViewModel = hiltViewModel(), navController: NavController) {
 
     val cardState = viewModels.getCartItem.collectAsState()
+
+    val context = LocalContext.current
 
 
 
@@ -113,7 +118,12 @@ fun CartPage(modifier: Modifier = Modifier, viewModels: MyViewModel = hiltViewMo
         // Checkout Button
         Button(
             onClick = {
-
+                val currentCartItems = cardState.value.data ?: emptyList()
+                if (currentCartItems.any { it != null }) { // Check if there's any non-null item
+                    navController.navigate(Routes.CheckOutScreen(productId = null)) // Navigate with productId = null for cart checkout
+                } else {
+                    Toast.makeText(context, "Your cart is empty. Please add items to proceed.", Toast.LENGTH_LONG).show()
+                }
             },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -172,8 +182,8 @@ fun CardItem(
             Spacer(modifier = Modifier.width(8.dp))
 
             Column(horizontalAlignment = Alignment.End) {
-                Text("Total: Rs ${(cartItem.price.toIntOrNull() ?: 0) * cartItem.quantity}", 
-                    fontWeight = FontWeight.Bold, 
+                Text("Total: Rs ${(cartItem.price.toIntOrNull() ?: 0) * cartItem.quantity}",
+                    fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.bodyLarge
                 )

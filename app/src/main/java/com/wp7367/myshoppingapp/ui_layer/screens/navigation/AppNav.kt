@@ -30,8 +30,10 @@ import androidx.navigation.toRoute
 import com.google.firebase.auth.FirebaseAuth
 import com.wp7367.myshoppingapp.ui_layer.screens.CheckOutScreenUi
 import com.wp7367.myshoppingapp.ui_layer.screens.EachProductDetailScreen
+import com.wp7367.myshoppingapp.ui_layer.screens.EditAddressScreen
 import com.wp7367.myshoppingapp.ui_layer.screens.HomeScreenUi
 import com.wp7367.myshoppingapp.ui_layer.screens.LoginScreen
+import com.wp7367.myshoppingapp.ui_layer.screens.SeeAllProductUi
 import com.wp7367.myshoppingapp.ui_layer.screens.SignUpScreen
 import com.wp7367.myshoppingapp.ui_layer.screens.pages.CartPage
 import com.wp7367.myshoppingapp.ui_layer.screens.pages.FavoritePage
@@ -163,6 +165,16 @@ fun AppNav(firebaseAuth: FirebaseAuth,){
                     val data = it.toRoute<Routes.CheckOutScreen>()
                     CheckOutScreenUi(navController = navController, productId= data.productId)
                 }
+                
+                composable <Routes.EditAddressScreen>
+                {
+                    EditAddressScreen(navController = navController)
+                }
+
+                composable <Routes.SeeAllProduct>
+                {
+                    SeeAllProductUi(navController = navController)
+                }
             }
         }
     }
@@ -176,3 +188,4 @@ data class navItemList(
     val label: String,
     val icon: ImageVector,
 )
+

@@ -244,6 +244,9 @@ fun HomeScreenUi(viewModels: MyViewModel = hiltViewModel(),navController: NavCon
                     text = "See More",
                     fontSize = 14.sp,
                     color = Color.Magenta,
+                    modifier = Modifier.clickable {
+                        navController.navigate(Routes.SeeAllProduct)
+                    }
                 )
             }
 
