@@ -1,5 +1,6 @@
 package com.wp7367.myshoppingapp.ui_layer.screens.auth
 
+import android.util.Patterns
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -38,25 +39,21 @@ import com.wp7367.myshoppingapp.R
 import com.wp7367.myshoppingapp.domain_layer.models.userData
 import com.wp7367.myshoppingapp.ui_layer.viewModel.MyViewModel
 
+
+
+
 @Composable
-
-
 fun SignUpScreen(viewModel: MyViewModel = hiltViewModel(), navController: NavController){
 
 //    ~ Here State is Collect ~
 
     val context = LocalContext.current
-
     val authState by viewModel.registerUser.collectAsStateWithLifecycle()
-
-
-
 
     // ----- Media Query style breakpoints -----
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
 
-    val titleSize: Int
     val fieldWidth: Dp
     val buttonWidth: Dp
     val circleBig: Dp
@@ -68,7 +65,6 @@ fun SignUpScreen(viewModel: MyViewModel = hiltViewModel(), navController: NavCon
     when {
         screenWidth < 360.dp -> {
             // Small phone
-            titleSize = 24
             fieldWidth = 260.dp
             buttonWidth = 200.dp
             circleBig = 160.dp
@@ -79,7 +75,6 @@ fun SignUpScreen(viewModel: MyViewModel = hiltViewModel(), navController: NavCon
         }
         screenWidth < 600.dp -> {
             // Normal phone
-            titleSize = 32
             fieldWidth = 320.dp
             buttonWidth = 250.dp
             circleBig = 220.dp
@@ -90,7 +85,6 @@ fun SignUpScreen(viewModel: MyViewModel = hiltViewModel(), navController: NavCon
         }
         else -> {
             // Tablet / Foldable
-            titleSize = 40
             fieldWidth = 400.dp
             buttonWidth = 300.dp
             circleBig = 300.dp
@@ -101,156 +95,163 @@ fun SignUpScreen(viewModel: MyViewModel = hiltViewModel(), navController: NavCon
         }
     }
 
-
-
     //  ~ Here State is Manage ~
     when{
         authState.isLoading ->{
             CircularProgressIndicator()
-
         }
         authState.error != null ->{
             Toast.makeText(context,authState.error.toString(),Toast.LENGTH_SHORT).show()
-
         }
         authState.data != null ->{
-
             Toast.makeText(context,authState.data.toString(),Toast.LENGTH_SHORT).show()
-
+            // Consider navigating away here, e.g., navController.popBackStack() or to a login/home screen
         }
-
-
     }
 
-
     //    Screen Ui
-
-Column (modifier = Modifier
+    Column (modifier = Modifier
                   .fillMaxSize()
                   .fillMaxWidth()
                   .background(color = Color.White),)
-{
-
-    Row(
-        modifier = Modifier.fillMaxWidth())
     {
-        Box(
-            modifier = Modifier
-                .size(circleBig)
-                .offset(x = circleBigOffsetX, y = circleBigOffsetY)
-                .align(Alignment.Top)
-        ) {
 
-            Image(
-                painter = painterResource(id = R.drawable.circle332212),
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize())
-
-        }
-
-    }
-
-    Text(text = "Create Account:", modifier = Modifier.padding(start = 15.dp),
-        fontSize = MaterialTheme.typography.headlineLarge.fontSize,
-    )
-
-    Spacer(modifier = Modifier.height(10.dp))
-
-    Column (modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ){
-
-
-        val firstUserName = remember { mutableStateOf("") }
-        val lastUseName = remember { mutableStateOf("") }
-        val email = remember { mutableStateOf("") }
-        val password = remember { mutableStateOf("") }
-        val phoneNumber = remember { mutableStateOf("") }
-
-
-
-
-        OutlinedTextField(
-            value = firstUserName.value,
-            onValueChange = { firstUserName.value = it },
-            label = { Text("FirstName") },
-            singleLine = true,
-            modifier = Modifier.width(fieldWidth)
-
-        )
-        Spacer(modifier = Modifier.height(5.dp))
-
-        OutlinedTextField(
-            value = lastUseName.value,
-            onValueChange = { lastUseName.value = it },
-            label = { Text("LastName") },
-            singleLine = true,
-            modifier = Modifier.width(fieldWidth)
-
-        )
-
-        OutlinedTextField(
-            value = email.value,
-            onValueChange = { email.value = it },
-            label = { Text("Gmail") },
-            singleLine = true,
-            modifier = Modifier.width(fieldWidth)
-
-        )
-        Spacer(modifier = Modifier.height(5.dp))
-
-        OutlinedTextField(
-            value = password.value,
-            onValueChange = { password.value = it },
-            label = { Text("PASSWORD") },
-            singleLine = true,
-            modifier = Modifier.width(fieldWidth)
-
-        )
-        Spacer(modifier = Modifier.height(5.dp))
-
-        OutlinedTextField(
-            value = phoneNumber.value,
-            onValueChange = {phoneNumber.value = it },
-            label = { Text("PHONE NUMBER") },
-            singleLine = true,
-            modifier = Modifier.width(fieldWidth)
-
-        )
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Button(onClick = {
-            val data = userData(
-                firstName = firstUserName.value,
-                lastName = lastUseName.value,
-                email = email.value,
-                password = password.value,
-                phoneNumber = phoneNumber.value
-            )
-            viewModel.registerUser(data)
-        },modifier = Modifier.width(buttonWidth)) {
-            Text(text = "Register")
-
-        }
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Box(modifier = Modifier
-                .size(circleSmall)
-                .offset(y = circleSmallOffsetY)
-                .align(Alignment.Bottom)
-            ){
-
-
-                Image(painter = painterResource(id = R.drawable.circle33221),
+        Row(
+            modifier = Modifier.fillMaxWidth())
+        {
+            Box(
+                modifier = Modifier
+                    .size(circleBig)
+                    .offset(x = circleBigOffsetX, y = circleBigOffsetY)
+                    .align(Alignment.Top)
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.circle332212),
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize())
             }
-
         }
 
+        Text(text = "Create Account:", modifier = Modifier.padding(start = 15.dp),
+            fontSize = MaterialTheme.typography.headlineLarge.fontSize,
+        )
 
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Column (modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ){
+
+            val firstUserName = remember { mutableStateOf("") }
+            val lastUseName = remember { mutableStateOf("") }
+            val email = remember { mutableStateOf("") }
+            val password = remember { mutableStateOf("") }
+            val phoneNumber = remember { mutableStateOf("") }
+
+            OutlinedTextField(
+                value = firstUserName.value,
+                onValueChange = { firstUserName.value = it },
+                label = { Text("FirstName") },
+                singleLine = true,
+                modifier = Modifier.width(fieldWidth)
+            )
+            Spacer(modifier = Modifier.height(5.dp))
+
+            OutlinedTextField(
+                value = lastUseName.value,
+                onValueChange = { lastUseName.value = it },
+                label = { Text("LastName") },
+                singleLine = true,
+                modifier = Modifier.width(fieldWidth)
+            )
+            Spacer(modifier = Modifier.height(5.dp))
+
+            OutlinedTextField(
+                value = email.value,
+                onValueChange = { email.value = it },
+                label = { Text("Gmail") },
+                singleLine = true,
+                modifier = Modifier.width(fieldWidth)
+            )
+            Spacer(modifier = Modifier.height(5.dp))
+
+            OutlinedTextField(
+                value = password.value,
+                onValueChange = { password.value = it },
+                label = { Text("PASSWORD") },
+                singleLine = true,
+                modifier = Modifier.width(fieldWidth)
+            )
+            Spacer(modifier = Modifier.height(5.dp))
+
+            OutlinedTextField(
+                value = phoneNumber.value,
+                onValueChange = {phoneNumber.value = it },
+                label = { Text("PHONE NUMBER") },
+                singleLine = true,
+                modifier = Modifier.width(fieldWidth)
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Button(onClick = {
+                val (isValid, message) = validateInputs(
+                    firstUserName.value,
+                    lastUseName.value,
+                    email.value,
+                    password.value,
+                    phoneNumber.value
+                )
+                if (isValid) {
+                    val data = userData(
+                        firstName = firstUserName.value,
+                        lastName = lastUseName.value,
+                        email = email.value,
+                        password = password.value,
+                        phoneNumber = phoneNumber.value
+                    )
+                    viewModel.registerUser(data)
+                } else {
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                }
+            },modifier = Modifier.width(buttonWidth)) {
+                Text(text = "Register")
+            }
+
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Box(modifier = Modifier
+                    .size(circleSmall)
+                    .offset(y = circleSmallOffsetY)
+                    .align(Alignment.Bottom)
+                ){
+                    Image(painter = painterResource(id = R.drawable.circle33221),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize())
+                }
+            }
+        }
     }
-
 }
 
+private fun isValidEmail(email: String): Boolean {
+    return Patterns.EMAIL_ADDRESS.matcher(email).matches()
+}
 
+private fun validateInputs(
+    firstName: String,
+    lastName: String,
+    email: String,
+    password: String,
+    phoneNumber: String
+): Pair<Boolean, String> {
+    if (firstName.isBlank() || lastName.isBlank() || email.isBlank() || password.isBlank() || phoneNumber.isBlank()) {
+        return Pair(false, "All fields are required.")
+    }
+    if (!isValidEmail(email)) {
+        return Pair(false, "Invalid email format.")
+    }
+    if (password.length < 6) {
+        return Pair(false, "Password must be at least 6 characters long.")
+    }
+    // Add more specific validation for phone number if needed
+    return Pair(true, "")
 }

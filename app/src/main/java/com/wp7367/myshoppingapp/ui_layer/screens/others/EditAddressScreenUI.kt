@@ -31,37 +31,109 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import android.util.Patterns
 
 @Composable
-fun EditAddressScreen(modifier: Modifier = Modifier,navController: NavController) {
+fun EditAddressScreen(modifier: Modifier = Modifier, navController: NavController) {
 
-
-
-    val scrollState = rememberScrollState()
     var email by remember { mutableStateOf("") }
     var fullName by remember { mutableStateOf("") }
     var address1 by remember { mutableStateOf("") }
-    var address2 by remember { mutableStateOf("") }
+    var address2 by remember { mutableStateOf("") } // Optional field, might not need strict validation
     var city by remember { mutableStateOf("") }
     var pinCode by remember { mutableStateOf("") }
     var contactNumber by remember { mutableStateOf("") }
     var state by remember { mutableStateOf("") }
 
+    var emailError by remember { mutableStateOf<String?>(null) }
+    var fullNameError by remember { mutableStateOf<String?>(null) }
+    var address1Error by remember { mutableStateOf<String?>(null) }
+    var cityError by remember { mutableStateOf<String?>(null) }
+    var pinCodeError by remember { mutableStateOf<String?>(null) }
+    var contactNumberError by remember { mutableStateOf<String?>(null) }
+    var stateError by remember { mutableStateOf<String?>(null) }
 
+    val scrollState = rememberScrollState()
 
+    fun validateForm(): Boolean {
+        var isValid = true
 
+        // Email validation
+        if (email.isBlank()) {
+            emailError = "Email cannot be empty"
+            isValid = false
+        } else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            emailError = "Invalid email format"
+            isValid = false
+        } else {
+            emailError = null
+        }
 
-    Scaffold (modifier = Modifier.fillMaxSize()) { innerPadding ->        // Apply Scaffold to get Extra Space
+        // Full Name validation
+        if (fullName.isBlank()) {
+            fullNameError = "Full name cannot be empty"
+            isValid = false
+        } else {
+            fullNameError = null
+        }
 
+        // Address1 validation
+        if (address1.isBlank()) {
+            address1Error = "Address line 1 cannot be empty"
+            isValid = false
+        } else {
+            address1Error = null
+        }
 
+        // City validation
+        if (city.isBlank()) {
+            cityError = "City cannot be empty"
+            isValid = false
+        } else {
+            cityError = null
+        }
+
+        // PinCode validation
+        if (pinCode.isBlank()) {
+            pinCodeError = "Pin code cannot be empty"
+            isValid = false
+        } else if (pinCode.any { !it.isDigit() } || pinCode.length != 6) {
+            pinCodeError = "Invalid pin code (must be 6 digits)"
+            isValid = false
+        } else {
+            pinCodeError = null
+        }
+
+        // Contact Number validation
+        if (contactNumber.isBlank()) {
+            contactNumberError = "Contact number cannot be empty"
+            isValid = false
+        } else if (contactNumber.any { !it.isDigit() } || contactNumber.length < 10) { // Basic check for digits and length
+            contactNumberError = "Invalid contact number"
+            isValid = false
+        } else {
+            contactNumberError = null
+        }
+
+        // State validation
+        if (state.isBlank()) {
+            stateError = "State cannot be empty"
+            isValid = false
+        } else {
+            stateError = null
+        }
+        
+        return isValid
+    }
+
+    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(10.dp)
-                .verticalScroll(scrollState)                   // Apply After innerPadding then it work
+                .verticalScroll(scrollState)
         ) {
-            // Top Bar
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { navController.popBackStack() }) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -79,85 +151,115 @@ fun EditAddressScreen(modifier: Modifier = Modifier,navController: NavController
                 )
             }
 
-
-
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Contact Information
             Text("Contact Information:", style = MaterialTheme.typography.bodyMedium)
             OutlinedTextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = { 
+                    email = it 
+                    emailError = null 
+                },
                 label = { Text("Email") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = emailError != null,
+                supportingText = { emailError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
             )
             OutlinedTextField(
                 value = contactNumber,
-                onValueChange = { contactNumber = it },
+                onValueChange = { 
+                    contactNumber = it
+                    contactNumberError = null
+                },
                 label = { Text("Contact Number") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = contactNumberError != null,
+                supportingText = { contactNumberError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Shipping Address
             Text("Shipping Address:", style = MaterialTheme.typography.bodyMedium)
             OutlinedTextField(
                 value = fullName,
-                onValueChange = { fullName = it },
+                onValueChange = { 
+                    fullName = it 
+                    fullNameError = null
+                },
                 label = { Text("Full Name") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = fullNameError != null,
+                supportingText = { fullNameError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
             )
             Spacer(modifier = Modifier.height(5.dp))
 
             OutlinedTextField(
                 value = address1,
-                onValueChange = { address1 = it },
+                onValueChange = { 
+                    address1 = it 
+                    address1Error = null
+                },
                 label = { Text("House No, Building Name") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = address1Error != null,
+                supportingText = { address1Error?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
             )
             Spacer(modifier = Modifier.height(5.dp))
 
             OutlinedTextField(
                 value = address2,
-                onValueChange = { address2 = it },
-                label = { Text("RoadName, Area,Colony") },
+                onValueChange = { address2 = it }, // No specific error state for address2, can be optional
+                label = { Text("RoadName, Area,Colony (Optional)") },
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(5.dp))
 
             OutlinedTextField(
                 value = city,
-                onValueChange = { city = it },
+                onValueChange = { 
+                    city = it 
+                    cityError = null
+                },
                 label = { Text("City") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = cityError != null,
+                supportingText = { cityError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
             )
             Spacer(modifier = Modifier.height(5.dp))
 
             OutlinedTextField(
                 value = pinCode,
-                onValueChange = { pinCode = it },
+                onValueChange = { 
+                    pinCode = it 
+                    pinCodeError = null
+                },
                 label = { Text("PinCode") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = pinCodeError != null,
+                supportingText = { pinCodeError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
             )
 
             Spacer(modifier = Modifier.height(5.dp))
 
             OutlinedTextField(
                 value = state,
-                onValueChange = { state = it },
+                onValueChange = { 
+                    state = it 
+                    stateError = null
+                },
                 label = { Text("State") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = stateError != null,
+                supportingText = { stateError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
             )
-
 
             Spacer(modifier = Modifier.height(16.dp))
 
-
-            // Continue Button
             Button(
                 onClick = {
-
+                    if (validateForm()) {
+                        // Proceed with saving logic
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -169,11 +271,3 @@ fun EditAddressScreen(modifier: Modifier = Modifier,navController: NavController
         }
     }
 }
-
-
-
-
-
-
-
-

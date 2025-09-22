@@ -114,22 +114,20 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
 
     //     ~ Get User By Id ~
     override suspend fun getUserById(uid: String): Flow<ResultState<userData>> = callbackFlow {
-        trySend(ResultState.Loading)
         if (uid.isEmpty()) {
             trySend(ResultState.Error("User ID cannot be empty."))
         } else {
+            trySend(ResultState.Loading)
             FirebaseFirestore.collection(USERS)
-                .document(uid).get().addOnSuccessListener { documentSnapshot -> // Renamed 'it' for clarity
-                    documentSnapshot.toObject(userData::class.java)?.let { user ->
-                        user.uid = documentSnapshot.id // Set uid on the non-null user
-                        trySend(ResultState.Success(user))
-                    } ?: run {
-                        // This block executes if toObject() returns null
-                        trySend(ResultState.Error("User data for UID '$uid' could not be found or parsed."))
-                    }
+                .document(uid)
+                .get()
+                .addOnSuccessListener { doc ->
+                    val user = doc.toObject(userData::class.java)?.apply { this.uid = doc.id }
+                    if (user != null) trySend(ResultState.Success(user))
+                    else trySend(ResultState.Error("User not found or could not be parsed."))
                 }
-                .addOnFailureListener { exception -> // Network issue Our other Issue Occur
-                    trySend(ResultState.Error(exception.message ?: "Failed to fetch user data for UID '$uid' due to an error."))
+                .addOnFailureListener { e ->
+                    trySend(ResultState.Error(e.message ?: "Failed to fetch user data."))
                 }
         }
         awaitClose {

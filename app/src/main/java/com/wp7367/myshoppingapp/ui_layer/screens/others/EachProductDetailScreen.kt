@@ -39,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -67,7 +68,7 @@ fun EachProductDetailScreen(productId: String, viewModels: MyViewModel = hiltVie
 
                             ) {
 
-    val EachProductDetailSt by viewModels.getProductById.collectAsStateWithLifecycle()
+    val eachProductDetailSt by viewModels.getProductById.collectAsStateWithLifecycle()
 
     val setCartItemState = viewModels.setCartItem.collectAsState()
     val setFavSt = viewModels.setFavItem.collectAsState()
@@ -76,252 +77,260 @@ fun EachProductDetailScreen(productId: String, viewModels: MyViewModel = hiltVie
 
 
     val scrollState = rememberScrollState()
-    var quantity by remember { mutableStateOf(1) }
-    var selectedSize by remember { mutableStateOf("Uk 10") }
-    var selectedColor by remember { mutableStateOf(Color(0xFFE57373)) }
-
-
-
+    var quantity by remember { mutableIntStateOf(1) }
+    var selectedSize by remember { mutableStateOf<String?>(null) }
+    var selectedColor by remember { mutableStateOf<Color?>(null) } // Initialize to null
+    var sizeError by remember { mutableStateOf<String?>(null) }
+    var colorError by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(key1 = Unit){
        viewModels.getProductById(productId)
-
     }
 
-    // Cart LaunchedEffect for Toast message
+
+    // for show Toast
     LaunchedEffect(setCartItemState.value) {
         val state = setCartItemState.value
         if (state.data != null && !state.isLoading && state.error == null) {
             Toast.makeText(context, state.data, Toast.LENGTH_SHORT).show()
-            // Optional: Add a call to a new ViewModel function here to reset the state
-            // e.g., viewModels.clearCartItemStatus()
         } else if (state.error != null && !state.isLoading) {
             Toast.makeText(context, "Error: ${state.error}", Toast.LENGTH_SHORT).show()
-            // Optional: Reset error state in ViewModel
         }
     }
 
-    // LaunchedEffect for Favorite Item Toast message
     LaunchedEffect(setFavSt.value) {
         val state = setFavSt.value
         if (state.data != null && !state.isLoading && state.error == null) {
-            Toast.makeText(context, state.data, Toast.LENGTH_SHORT).show() // Assumes state.data is the success message string
-            // Optional: viewModels.clearFavItemStatus() // Consider if your ViewModel needs this
+            Toast.makeText(context, state.data, Toast.LENGTH_SHORT).show()
         } else if (state.error != null && !state.isLoading) {
             Toast.makeText(context, "Error adding to wishlist: ${state.error}", Toast.LENGTH_SHORT).show()
-            // Optional: viewModels.clearFavItemError() // Consider if your ViewModel needs this
         }
     }
 
     when{
-        EachProductDetailSt.isLoading ->{
-
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center)
-            {
+        eachProductDetailSt.isLoading ->{
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
         }
-        EachProductDetailSt.error!= null ->{
-            Text(text = EachProductDetailSt.error!!)
-
+        eachProductDetailSt.error!= null ->{
+            Text(text = eachProductDetailSt.error!!)
         }
-        EachProductDetailSt.data != null ->{
-
-
-//            Column (modifier = Modifier.fillMaxSize())
-//            {
-//
-//                Text(text = EachProductDetailSt.value.data!!.name)
-//            }
-
-//-----------------------------------------------------------------------------------------------------------------------------
-
+        eachProductDetailSt.data != null ->{
             Scaffold(modifier = Modifier.fillMaxSize()){innerPadding ->
-
-
-            Column (modifier = Modifier.fillMaxSize().padding(innerPadding)
-                .verticalScroll(scrollState))
-            {
-
-                // --- Product Image ---
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(370.dp)
-                ) {
-                   AsyncImage(
-                       model = EachProductDetailSt.data!!.image,
-                       contentDescription = null,
-                       contentScale = ContentScale.Crop,
-                       modifier = Modifier.fillMaxSize()
-                   )
-                    // Back Icon
-                    IconButton(onClick = { navController.popBackStack() }, modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(16.dp))
-                    {
-                        Icon(imageVector = Icons.Default.ArrowBackIosNew, contentDescription = "Back")
-                    }
-
-                }
-
-
-                // --- Product Details ---
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = EachProductDetailSt.data!!.name,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(Modifier.height(4.dp)) // Add some space
-                    Text( // Display Category
-                        text = "Category: ${EachProductDetailSt.data!!.category}",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-
-                    // Rating
-                    Row(modifier = Modifier.padding(vertical = 4.dp)) {
-                        repeat(5) { index ->
-                            Icon(
-                                imageVector = Icons.Default.Star,
-                                contentDescription = null,
-                                tint = if (index < 3) Color(0xFFFFD700) else Color.LightGray,
-                                modifier = Modifier.size(20.dp)
-                            )
+                Column (modifier = Modifier.fillMaxSize().padding(innerPadding)
+                    .verticalScroll(scrollState))
+                {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(370.dp)
+                    ) {
+                       AsyncImage(
+                           model = eachProductDetailSt.data!!.image,
+                           contentDescription = null,
+                           contentScale = ContentScale.Crop,
+                           modifier = Modifier.fillMaxSize()
+                       )
+                        IconButton(onClick = { navController.popBackStack() }, modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(16.dp))
+                        {
+                            Icon(imageVector = Icons.Default.ArrowBackIosNew, contentDescription = "Back")
                         }
                     }
 
-                // Price
-                Text(
-                    text = "Price: ${EachProductDetailSt.data!!.finalPrice}",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-
-                // Size selector
-                Spacer(Modifier.height(8.dp))
-                Text("Size", fontWeight = FontWeight.Medium)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(vertical = 8.dp)) {
-                    listOf("UK 8", "UK 7", "UK 9").forEach { size ->
-                        OutlinedButton(
-                            onClick = { selectedSize = size},
-                            border = BorderStroke(1.dp, if (selectedSize == size) Color.Red else Color.Gray),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = if (selectedSize == size) Color.Red else Color.Black)
-                        ) {
-                            Text(size)
-                        }
-                    }
-                }
-
-                // Quantity
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { if (quantity > 1) quantity-- }) {
-                        Icon(Icons.Default.Remove, contentDescription = "Decrease")
-                    }
-                    Text(quantity.toString(), fontSize = 18.sp, modifier = Modifier.padding(horizontal = 8.dp))
-                    IconButton(onClick = { quantity++ }) {
-                        Icon(Icons.Default.Add, contentDescription = "Increase")
-                    }
-                }
-
-                // Color selector
-                Spacer(Modifier.height(12.dp))
-                Text("Color", fontWeight = FontWeight.Medium)
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(vertical = 8.dp)) {
-                    listOf(
-                        Color(0xFFF53131),
-                        Color(0xFF1A36E7),
-                        Color(0xFF1E7507),
-                        Color(0xFF0F866F)
-                    ).forEach { color ->
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(color)
-                                .border(
-                                    2.dp,
-                                    if (selectedColor == color) Color.Black else Color.Transparent,
-                                    CircleShape
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = eachProductDetailSt.data!!.name,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "Category: ${eachProductDetailSt.data!!.category}",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Row(modifier = Modifier.padding(vertical = 4.dp)) {
+                            repeat(5) { index ->
+                                Icon(
+                                    imageVector = Icons.Default.Star,
+                                    contentDescription = null,
+                                    tint = if (index < 3) Color(0xFFFFD700) else Color.LightGray,
+                                    modifier = Modifier.size(20.dp)
                                 )
-                                .clickable { selectedColor = color }
+                            }
+                        }
+                        Text(
+                            text = "Price: ${eachProductDetailSt.data!!.finalPrice}",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
+
+                        Spacer(Modifier.height(8.dp))
+                        Text("Size", fontWeight = FontWeight.Medium)
+                        Column {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(vertical = 8.dp)) {
+                                listOf("UK 8", "UK 7", "UK 9").forEach { size ->
+                                    OutlinedButton(
+                                        onClick = {
+                                            selectedSize = size
+                                            sizeError = null
+                                        },
+                                        border = BorderStroke(1.dp, if (selectedSize == size) Color.Red else Color.Gray),
+                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = if (selectedSize == size) Color.Red else Color.Black)
+                                    ) {
+                                        Text(size)
+                                    }
+                                }
+                            }
+                            sizeError?.let {
+                                Text(
+                                    text = it,
+                                    color = Color.Red,
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.padding(start = 8.dp)
+                                )
+                            }
+                        }
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = { if (quantity > 1) quantity-- }) {
+                                Icon(Icons.Default.Remove, contentDescription = "Decrease")
+                            }
+                            Text(quantity.toString(), fontSize = 18.sp, modifier = Modifier.padding(horizontal = 8.dp))
+                            IconButton(onClick = { quantity++ }) {
+                                Icon(Icons.Default.Add, contentDescription = "Increase")
+                            }
+                        }
+
+                        Spacer(Modifier.height(12.dp))
+                        Text("Color", fontWeight = FontWeight.Medium)
+                        Column { // Wrap Row and Error in a Column for color selector
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(vertical = 8.dp)) {
+                                listOf(
+                                    Color(0xFFF53131),
+                                    Color(0xFF1A36E7),
+                                    Color(0xFF1E7507),
+                                    Color(0xFF0F866F)
+                                ).forEach { color ->
+                                    Box(
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .clip(CircleShape)
+                                            .background(color)
+                                            .border(
+                                                2.dp,
+                                                if (selectedColor == color) Color.Black else Color.Transparent,
+                                                CircleShape
+                                            )
+                                            .clickable { 
+                                                selectedColor = color 
+                                                colorError = null
+                                            }
+                                    )
+                                }
+                            }
+                            colorError?.let {
+                                Text(
+                                    text = it,
+                                    color = Color.Red,
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.padding(start = 8.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(Modifier.height(12.dp))
+                        Text("Specification :", fontWeight = FontWeight.Bold)
+                        Text(eachProductDetailSt.data!!.description, fontSize = 14.sp)
+                        Text(
+                            "Please bear in mind that the photo may be slightly different from the actual item...",
+                            fontSize = 12.sp,
+                            color = Color.Gray,
+                            modifier = Modifier.padding(top = 4.dp)
                         )
                     }
-                }
 
-                // Specification
-                Spacer(Modifier.height(12.dp))
-                Text("Specification :", fontWeight = FontWeight.Bold)
-                Text(EachProductDetailSt.data!!.description, fontSize = 14.sp)
-                Text(
-                    "Please bear in mind that the photo may be slightly different from the actual item...",
-                    fontSize = 12.sp,
-                    color = Color.Gray,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
+                    Spacer(Modifier.height(16.dp))
+                    Button(
+                        onClick = { 
+                            var isValid = true
+                            if (selectedSize == null) {
+                                sizeError = "Please select a size."
+                                isValid = false
+                            }
+                            if (selectedColor == null) {
+                                colorError = "Please select a color."
+                                isValid = false
+                            }
+                            if (isValid) {
+                                navController.navigate(Routes.CheckOutScreen(productId))
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE57373)),
+                        modifier = Modifier.fillMaxWidth().height(50.dp)
+                            .padding(start = 22.dp, end = 22.dp)
+                    ) {
+                        Text("Buy now", color = Color.White)
+                    }
 
-                }
+                    Spacer(Modifier.height(10.dp))
+                    Button(
+                        onClick = {
+                            var isValid = true
+                            if (selectedSize == null) {
+                                sizeError = "Please select a size."
+                                isValid = false
+                            }
+                             if (selectedColor == null) {
+                                colorError = "Please select a color."
+                                isValid = false
+                            }
 
-                // Buttons
-                Spacer(Modifier.height(16.dp))
-                Button(
-                    onClick = { navController.navigate(Routes.CheckOutScreen(productId)) },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE57373)),
-                    modifier = Modifier.fillMaxWidth().height(50.dp)
-                        .padding(start = 22.dp, end = 22.dp)
-                ) {
-                    Text("Buy now", color = Color.White)
-                }
+                            if (isValid) {
+                                val data = cartItemModel(
+                                    productId = eachProductDetailSt.data!!.productId,
+                                    name = eachProductDetailSt.data!!.name,
+                                    imageUrl = eachProductDetailSt.data!!.image,
+                                    price = eachProductDetailSt.data!!.finalPrice,
+                                    quantity = quantity,
+                                    // size = selectedSize, // Ensure cartItemModel has a 'size' field
+                                    // color = selectedColor?.value.toString() // Ensure cartItemModel has a 'color' field
+                                )
+                                viewModels.setCartItem(data)
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
+                        modifier = Modifier.fillMaxWidth().height(50.dp)
+                            .padding(start = 22.dp, end = 22.dp)
+                    ) {
+                        Text("Add to Cart", color = Color.White)
+                    }
 
-                Spacer(Modifier.height(10.dp))
-                Button(
-                    onClick = {
-
-                        val data = cartItemModel(
-                            productId = EachProductDetailSt.data!!.productId,
-                            name = EachProductDetailSt.data!!.name,
-                            imageUrl = EachProductDetailSt.data!!.image,
-                            price = EachProductDetailSt.data!!.finalPrice,
-                            quantity = quantity,
-
-                        )
-                        viewModels.setCartItem(data)
-
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
-                    modifier = Modifier.fillMaxWidth().height(50.dp)
-                        .padding(start = 22.dp, end = 22.dp)
-                ) {
-                    Text("Add to Cart", color = Color.White)
-                }
-
-                TextButton(
-                    onClick = {
-                        val favData = favouriteModel(
-                            productId = EachProductDetailSt.data!!.productId,
-                            name = EachProductDetailSt.data!!.name,
-                            image = EachProductDetailSt.data!!.image,
-                            finalPrice = EachProductDetailSt.data!!.finalPrice,
-                            category = EachProductDetailSt.data!!.category,
-                            description = EachProductDetailSt.data!!.description,
-
-                        )
-                        viewModels.setFavItem(favData)
-                    },
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                        .padding(start = 22.dp, end = 22.dp)
-                ) {
-                    Icon(Icons.Default.FavoriteBorder, contentDescription = "Wishlist", tint = Color.Red)
-                    Spacer(Modifier.width(4.dp))
-                    Text("Add to Wishlist", color = Color.Red)
+                    TextButton(
+                        onClick = {
+                            val favData = favouriteModel(
+                                productId = eachProductDetailSt.data!!.productId,
+                                name = eachProductDetailSt.data!!.name,
+                                image = eachProductDetailSt.data!!.image,
+                                finalPrice = eachProductDetailSt.data!!.finalPrice,
+                                category = eachProductDetailSt.data!!.category,
+                                description = eachProductDetailSt.data!!.description,
+                            )
+                            viewModels.setFavItem(favData)
+                        },
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                            .padding(start = 22.dp, end = 22.dp)
+                    ) {
+                        Icon(Icons.Default.FavoriteBorder, contentDescription = "Wishlist", tint = Color.Red)
+                        Spacer(Modifier.width(4.dp))
+                        Text("Add to Wishlist", color = Color.Red)
+                    }
                 }
             }
-
-            }
-
         }
     }
-
 }
