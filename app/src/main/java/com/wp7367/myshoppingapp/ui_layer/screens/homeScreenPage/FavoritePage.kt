@@ -1,4 +1,4 @@
-package com.wp7367.myshoppingapp.ui_layer.screens.pages
+package com.wp7367.myshoppingapp.ui_layer.screens.homeScreenPage
 
 
 import androidx.compose.foundation.background
@@ -28,7 +28,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
@@ -44,7 +43,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.wp7367.myshoppingapp.domain_layer.models.favouriteModel
-import com.wp7367.myshoppingapp.ui_layer.screens.MyViewModel
+import com.wp7367.myshoppingapp.ui_layer.viewModel.MyViewModel
 
 @Composable
 fun FavoritePage(modifier: Modifier = Modifier,viewModels: MyViewModel = hiltViewModel(), navController: NavController) {

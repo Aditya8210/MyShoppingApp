@@ -1,4 +1,4 @@
-package com.wp7367.myshoppingapp.ui_layer.screens
+package com.wp7367.myshoppingapp.ui_layer.screens.others
 
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -6,7 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,22 +17,20 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items // Added for LazyColumn items extension
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Icon
 import androidx.compose.material.RadioButton
 import androidx.compose.material.Scaffold
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,12 +44,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.wp7367.myshoppingapp.MainActivity
 import com.wp7367.myshoppingapp.domain_layer.models.ProductModel
 import com.wp7367.myshoppingapp.domain_layer.models.cartItemModel
 import com.wp7367.myshoppingapp.ui_layer.screens.navigation.Routes
+import com.wp7367.myshoppingapp.ui_layer.viewModel.MyViewModel
 
 
 @Composable
@@ -62,8 +61,10 @@ fun CheckOutScreenUi(
     productId: String? // Nullable for cart checkout
 ) {
 
-    val productState by viewModel.getProductById.collectAsState()
-    val cartState by viewModel.getCartItem.collectAsState()
+    val productState by viewModel.getProductById.collectAsStateWithLifecycle()
+    val cartState by viewModel.getCartItem.collectAsStateWithLifecycle()
+
+
 
     var selectedPaymentMethod by remember { mutableStateOf("Online payment") }
     val paymentOptions = listOf("Online payment", "Cash on delivery")
@@ -129,7 +130,7 @@ fun CheckOutScreenUi(
                     // Top Bar
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 17.dp)) {
                         IconButton(onClick = { navController.popBackStack() }) {
-                            androidx.compose.material3.Icon(
+                            Icon(
                                 Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Back"
                             )
@@ -178,7 +179,7 @@ fun CheckOutScreenUi(
                                     
                                 }, modifier = Modifier.padding(end = 8.dp)
                                 ) {
-                                    androidx.compose.material3.Icon(
+                                    Icon(
                                         imageVector = Icons.Rounded.EditNote,
                                         contentDescription = "Edit",
                                         tint = MaterialTheme.colorScheme.error,

@@ -44,6 +44,8 @@ interface repo  {
 
   suspend fun deleteFavItem(favouriteModel: favouriteModel): Flow<ResultState<String>>
 
+  suspend fun searchFeature(query: String): Flow<ResultState<List<ProductModel>>>
+
 
 
 }

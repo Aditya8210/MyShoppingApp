@@ -1,4 +1,4 @@
-package com.wp7367.myshoppingapp.ui_layer.screens.pages
+package com.wp7367.myshoppingapp.ui_layer.screens.homeScreenPage
 
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -42,7 +42,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.wp7367.myshoppingapp.domain_layer.models.cartItemModel
-import com.wp7367.myshoppingapp.ui_layer.screens.MyViewModel
+import com.wp7367.myshoppingapp.ui_layer.viewModel.MyViewModel
 import com.wp7367.myshoppingapp.ui_layer.screens.navigation.Routes // Added import
 
 @Composable

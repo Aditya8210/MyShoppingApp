@@ -1,9 +1,8 @@
-package com.wp7367.myshoppingapp.ui_layer.screens
+package com.wp7367.myshoppingapp.ui_layer.screens.auth
 
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,49 +13,109 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.wp7367.myshoppingapp.R
 import com.wp7367.myshoppingapp.domain_layer.models.userData
+import com.wp7367.myshoppingapp.ui_layer.viewModel.MyViewModel
 
 @Composable
 
 
-fun SignUpScreen(viewModel: MyViewModel = hiltViewModel(),navController: NavController){
+fun SignUpScreen(viewModel: MyViewModel = hiltViewModel(), navController: NavController){
 
 //    ~ Here State is Collect ~
 
     val context = LocalContext.current
 
-    val authState =viewModel.registerUser.collectAsState()
+    val authState by viewModel.registerUser.collectAsStateWithLifecycle()
+
+
+
+
+    // ----- Media Query style breakpoints -----
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+
+    val titleSize: Int
+    val fieldWidth: Dp
+    val buttonWidth: Dp
+    val circleBig: Dp
+    val circleSmall: Dp
+    val circleBigOffsetX: Dp
+    val circleBigOffsetY: Dp
+    val circleSmallOffsetY: Dp
+
+    when {
+        screenWidth < 360.dp -> {
+            // Small phone
+            titleSize = 24
+            fieldWidth = 260.dp
+            buttonWidth = 200.dp
+            circleBig = 160.dp
+            circleSmall = 140.dp
+            circleBigOffsetX = 120.dp
+            circleBigOffsetY = (-40).dp
+            circleSmallOffsetY = 20.dp
+        }
+        screenWidth < 600.dp -> {
+            // Normal phone
+            titleSize = 32
+            fieldWidth = 320.dp
+            buttonWidth = 250.dp
+            circleBig = 220.dp
+            circleSmall = 180.dp
+            circleBigOffsetX = 210.dp
+            circleBigOffsetY = (-60).dp
+            circleSmallOffsetY = 30.dp
+        }
+        else -> {
+            // Tablet / Foldable
+            titleSize = 40
+            fieldWidth = 400.dp
+            buttonWidth = 300.dp
+            circleBig = 300.dp
+            circleSmall = 260.dp
+            circleBigOffsetX = 250.dp
+            circleBigOffsetY = (-80).dp
+            circleSmallOffsetY = 40.dp
+        }
+    }
+
+
 
     //  ~ Here State is Manage ~
     when{
-        authState.value.isLoading ->{
+        authState.isLoading ->{
             CircularProgressIndicator()
 
         }
-        authState.value.error != null ->{
-            Toast.makeText(context,authState.value.error.toString(),Toast.LENGTH_SHORT).show()
+        authState.error != null ->{
+            Toast.makeText(context,authState.error.toString(),Toast.LENGTH_SHORT).show()
 
         }
-        authState.value.data != null ->{
+        authState.data != null ->{
 
-            Toast.makeText(context,authState.value.data.toString(),Toast.LENGTH_SHORT).show()
+            Toast.makeText(context,authState.data.toString(),Toast.LENGTH_SHORT).show()
 
         }
 
@@ -77,12 +136,13 @@ Column (modifier = Modifier
     {
         Box(
             modifier = Modifier
-                .size(235.dp)
-                .offset(x = 180.dp, y = (-60).dp)
+                .size(circleBig)
+                .offset(x = circleBigOffsetX, y = circleBigOffsetY)
+                .align(Alignment.Top)
         ) {
 
             Image(
-                painter = painterResource(id = com.wp7367.myshoppingapp.R.drawable.circle332212),
+                painter = painterResource(id = R.drawable.circle332212),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize())
 
@@ -114,7 +174,8 @@ Column (modifier = Modifier
             value = firstUserName.value,
             onValueChange = { firstUserName.value = it },
             label = { Text("FirstName") },
-            singleLine = true
+            singleLine = true,
+            modifier = Modifier.width(fieldWidth)
 
         )
         Spacer(modifier = Modifier.height(5.dp))
@@ -123,7 +184,8 @@ Column (modifier = Modifier
             value = lastUseName.value,
             onValueChange = { lastUseName.value = it },
             label = { Text("LastName") },
-            singleLine = true
+            singleLine = true,
+            modifier = Modifier.width(fieldWidth)
 
         )
 
@@ -131,7 +193,8 @@ Column (modifier = Modifier
             value = email.value,
             onValueChange = { email.value = it },
             label = { Text("Gmail") },
-            singleLine = true
+            singleLine = true,
+            modifier = Modifier.width(fieldWidth)
 
         )
         Spacer(modifier = Modifier.height(5.dp))
@@ -140,7 +203,8 @@ Column (modifier = Modifier
             value = password.value,
             onValueChange = { password.value = it },
             label = { Text("PASSWORD") },
-            singleLine = true
+            singleLine = true,
+            modifier = Modifier.width(fieldWidth)
 
         )
         Spacer(modifier = Modifier.height(5.dp))
@@ -149,7 +213,8 @@ Column (modifier = Modifier
             value = phoneNumber.value,
             onValueChange = {phoneNumber.value = it },
             label = { Text("PHONE NUMBER") },
-            singleLine = true
+            singleLine = true,
+            modifier = Modifier.width(fieldWidth)
 
         )
         Spacer(modifier = Modifier.height(10.dp))
@@ -163,17 +228,19 @@ Column (modifier = Modifier
                 phoneNumber = phoneNumber.value
             )
             viewModel.registerUser(data)
-        }) {
+        },modifier = Modifier.width(buttonWidth)) {
             Text(text = "Register")
 
         }
         Row(modifier = Modifier.fillMaxWidth()) {
-            Box(modifier = Modifier.size(215.dp)
-                .offset(x = 0.dp, y = (+29).dp)
+            Box(modifier = Modifier
+                .size(circleSmall)
+                .offset(y = circleSmallOffsetY)
+                .align(Alignment.Bottom)
             ){
 
 
-                Image(painter = painterResource(id = com.wp7367.myshoppingapp.R.drawable.circle33221),
+                Image(painter = painterResource(id = R.drawable.circle33221),
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize())
             }

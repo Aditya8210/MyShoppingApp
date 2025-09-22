@@ -1,8 +1,7 @@
-package com.wp7367.myshoppingapp.ui_layer.screens
+package com.wp7367.myshoppingapp.ui_layer.screens.others
 
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -49,26 +48,26 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.wp7367.myshoppingapp.domain_layer.models.ProductModel
 import com.wp7367.myshoppingapp.domain_layer.models.cartItemModel
 import com.wp7367.myshoppingapp.domain_layer.models.favouriteModel
 import com.wp7367.myshoppingapp.ui_layer.screens.navigation.Routes
+import com.wp7367.myshoppingapp.ui_layer.viewModel.MyViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EachProductDetailScreen(productId: String ,viewModels: MyViewModel = hiltViewModel(), navController: NavController,
+fun EachProductDetailScreen(productId: String, viewModels: MyViewModel = hiltViewModel(), navController: NavController,
 
 
-) {
+                            ) {
 
-    val EachProductDetailSt = viewModels.getProductById.collectAsState()
+    val EachProductDetailSt by viewModels.getProductById.collectAsStateWithLifecycle()
 
     val setCartItemState = viewModels.setCartItem.collectAsState()
     val setFavSt = viewModels.setFavItem.collectAsState()
@@ -115,18 +114,18 @@ fun EachProductDetailScreen(productId: String ,viewModels: MyViewModel = hiltVie
     }
 
     when{
-        EachProductDetailSt.value.isLoading ->{
+        EachProductDetailSt.isLoading ->{
 
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center)
             {
                 CircularProgressIndicator()
             }
         }
-        EachProductDetailSt.value.error!= null ->{
-            Text(text = EachProductDetailSt.value.error!!)
+        EachProductDetailSt.error!= null ->{
+            Text(text = EachProductDetailSt.error!!)
 
         }
-        EachProductDetailSt.value.data != null ->{
+        EachProductDetailSt.data != null ->{
 
 
 //            Column (modifier = Modifier.fillMaxSize())
@@ -151,7 +150,7 @@ fun EachProductDetailScreen(productId: String ,viewModels: MyViewModel = hiltVie
                         .height(370.dp)
                 ) {
                    AsyncImage(
-                       model = EachProductDetailSt.value.data!!.image,
+                       model = EachProductDetailSt.data!!.image,
                        contentDescription = null,
                        contentScale = ContentScale.Crop,
                        modifier = Modifier.fillMaxSize()
@@ -170,13 +169,13 @@ fun EachProductDetailScreen(productId: String ,viewModels: MyViewModel = hiltVie
                 // --- Product Details ---
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = EachProductDetailSt.value.data!!.name,
+                        text = EachProductDetailSt.data!!.name,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(Modifier.height(4.dp)) // Add some space
                     Text( // Display Category
-                        text = "Category: ${EachProductDetailSt.value.data!!.category}",
+                        text = "Category: ${EachProductDetailSt.data!!.category}",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -195,7 +194,7 @@ fun EachProductDetailScreen(productId: String ,viewModels: MyViewModel = hiltVie
 
                 // Price
                 Text(
-                    text = "Price: ${EachProductDetailSt.value.data!!.finalPrice}",
+                    text = "Price: ${EachProductDetailSt.data!!.finalPrice}",
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
@@ -255,7 +254,7 @@ fun EachProductDetailScreen(productId: String ,viewModels: MyViewModel = hiltVie
                 // Specification
                 Spacer(Modifier.height(12.dp))
                 Text("Specification :", fontWeight = FontWeight.Bold)
-                Text(EachProductDetailSt.value.data!!.description, fontSize = 14.sp)
+                Text(EachProductDetailSt.data!!.description, fontSize = 14.sp)
                 Text(
                     "Please bear in mind that the photo may be slightly different from the actual item...",
                     fontSize = 12.sp,
@@ -281,10 +280,10 @@ fun EachProductDetailScreen(productId: String ,viewModels: MyViewModel = hiltVie
                     onClick = {
 
                         val data = cartItemModel(
-                            productId = EachProductDetailSt.value.data!!.productId,
-                            name = EachProductDetailSt.value.data!!.name,
-                            imageUrl = EachProductDetailSt.value.data!!.image,
-                            price = EachProductDetailSt.value.data!!.finalPrice,
+                            productId = EachProductDetailSt.data!!.productId,
+                            name = EachProductDetailSt.data!!.name,
+                            imageUrl = EachProductDetailSt.data!!.image,
+                            price = EachProductDetailSt.data!!.finalPrice,
                             quantity = quantity,
 
                         )
@@ -301,12 +300,12 @@ fun EachProductDetailScreen(productId: String ,viewModels: MyViewModel = hiltVie
                 TextButton(
                     onClick = {
                         val favData = favouriteModel(
-                            productId = EachProductDetailSt.value.data!!.productId,
-                            name = EachProductDetailSt.value.data!!.name,
-                            image = EachProductDetailSt.value.data!!.image,
-                            finalPrice = EachProductDetailSt.value.data!!.finalPrice,
-                            category = EachProductDetailSt.value.data!!.category,
-                            description = EachProductDetailSt.value.data!!.description,
+                            productId = EachProductDetailSt.data!!.productId,
+                            name = EachProductDetailSt.data!!.name,
+                            image = EachProductDetailSt.data!!.image,
+                            finalPrice = EachProductDetailSt.data!!.finalPrice,
+                            category = EachProductDetailSt.data!!.category,
+                            description = EachProductDetailSt.data!!.description,
 
                         )
                         viewModels.setFavItem(favData)

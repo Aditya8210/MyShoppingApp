@@ -1,5 +1,6 @@
-package com.wp7367.myshoppingapp.ui_layer.screens
+package com.wp7367.myshoppingapp.ui_layer.viewModel
 
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wp7367.myshoppingapp.common.ResultState
@@ -11,6 +12,7 @@ import com.wp7367.myshoppingapp.data_layer.useCase.GetBannerUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.GetCartItemUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.GetFavItemUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.GetProductByIdUseCase
+import com.wp7367.myshoppingapp.data_layer.useCase.GetProductBySearchUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.GetUserByIdUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.LoginUserWithEmailPassUseCase
 import com.wp7367.myshoppingapp.data_layer.useCase.RegisterUserWithEmailPassUseCase
@@ -28,6 +30,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -46,6 +50,7 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
                                       private val SetFavItem: SetFavItemUseCase,
                                       private val GetFavItem: GetFavItemUseCase,
                                       private val DeleteFav: DeleteFavItemUseCase,
+                                      private val SearchProduct: GetProductBySearchUseCase,
 
 
 
@@ -97,6 +102,9 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
 
     private val _deleteFavSt = MutableStateFlow(DeleteFavState())
     val deleteFav = _deleteFavSt.asStateFlow()
+
+    private val _searchProductSt = MutableStateFlow(SearchProductState())
+    val searchProduct = _searchProductSt.asStateFlow()
 
 
 
@@ -425,6 +433,43 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
     }
 
 
+    val _searchQuery = MutableStateFlow("")
+
+    fun onSearchQueryChange(query: String){
+        _searchQuery.value = query
+    }
+
+    fun searchQuery(){
+        viewModelScope.launch {
+            _searchQuery.debounce(500L).distinctUntilChanged()
+                .collect {
+                    if (it.isNotEmpty())
+                    {
+                        searchProduct(query = it)
+                    }
+                }
+        }
+    }
+
+    fun searchProduct(query: String){
+        viewModelScope.launch {
+            SearchProduct.getProductBySearchUseCase(query).collectLatest {
+                when(it){
+                    is ResultState.Loading -> {
+                        _searchProductSt.value = SearchProductState(isLoading = true)
+                    }
+                    is ResultState.Success -> {
+                        _searchProductSt.value = SearchProductState(data = it.data)
+                    }
+                    is ResultState.Error -> {
+                        _searchProductSt.value = SearchProductState(error = it.exception)
+                    }
+                }
+            }
+        }
+    }
+
+
 
 
 
@@ -520,6 +565,12 @@ data class DeleteFavState(
     val isLoading: Boolean = false,
     val error: String ?= null,
     val data:String? = null,
+)
+
+data class SearchProductState(
+    val isLoading: Boolean = false,
+    val error: String ?= null,
+    val data:List<ProductModel?> = emptyList()
 )
 
 

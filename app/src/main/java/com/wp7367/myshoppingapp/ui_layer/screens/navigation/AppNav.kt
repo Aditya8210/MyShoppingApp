@@ -28,16 +28,16 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.google.firebase.auth.FirebaseAuth
-import com.wp7367.myshoppingapp.ui_layer.screens.CheckOutScreenUi
-import com.wp7367.myshoppingapp.ui_layer.screens.EachProductDetailScreen
-import com.wp7367.myshoppingapp.ui_layer.screens.EditAddressScreen
-import com.wp7367.myshoppingapp.ui_layer.screens.HomeScreenUi
-import com.wp7367.myshoppingapp.ui_layer.screens.LoginScreen
-import com.wp7367.myshoppingapp.ui_layer.screens.SeeAllProductUi
-import com.wp7367.myshoppingapp.ui_layer.screens.SignUpScreen
-import com.wp7367.myshoppingapp.ui_layer.screens.pages.CartPage
-import com.wp7367.myshoppingapp.ui_layer.screens.pages.FavoritePage
-import com.wp7367.myshoppingapp.ui_layer.screens.pages.ProfilePage
+import com.wp7367.myshoppingapp.ui_layer.screens.others.CheckOutScreenUi
+import com.wp7367.myshoppingapp.ui_layer.screens.others.EachProductDetailScreen
+import com.wp7367.myshoppingapp.ui_layer.screens.others.EditAddressScreen
+import com.wp7367.myshoppingapp.ui_layer.screens.homeScreenPage.HomeScreenUi
+import com.wp7367.myshoppingapp.ui_layer.screens.auth.LoginScreen
+import com.wp7367.myshoppingapp.ui_layer.screens.others.SeeAllProductUi
+import com.wp7367.myshoppingapp.ui_layer.screens.auth.SignUpScreen
+import com.wp7367.myshoppingapp.ui_layer.screens.homeScreenPage.CartPage
+import com.wp7367.myshoppingapp.ui_layer.screens.homeScreenPage.FavoritePage
+import com.wp7367.myshoppingapp.ui_layer.screens.homeScreenPage.ProfilePage
 
 
 @Composable

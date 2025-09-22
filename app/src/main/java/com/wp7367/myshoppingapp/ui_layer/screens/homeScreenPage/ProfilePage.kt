@@ -1,4 +1,4 @@
-package com.wp7367.myshoppingapp.ui_layer.screens.pages
+package com.wp7367.myshoppingapp.ui_layer.screens.homeScreenPage
 
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -14,10 +14,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Edit
@@ -47,7 +45,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 import com.wp7367.myshoppingapp.domain_layer.models.userData
-import com.wp7367.myshoppingapp.ui_layer.screens.MyViewModel
+import com.wp7367.myshoppingapp.ui_layer.viewModel.MyViewModel
 import com.wp7367.myshoppingapp.ui_layer.screens.navigation.Routes
 
 
