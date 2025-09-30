@@ -1,22 +1,24 @@
 package com.wp7367.myshoppingapp.data_layer.repoimp
 
-import android.util.Log // Added this import
-import android.widget.Toast
+
+import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.toObject
+
 import com.wp7367.myshoppingapp.common.CART
 import com.wp7367.myshoppingapp.common.CATEGORY
 import com.wp7367.myshoppingapp.common.FAVOURITE
 import com.wp7367.myshoppingapp.common.PRODUCT
 
 import com.wp7367.myshoppingapp.common.ResultState
+import com.wp7367.myshoppingapp.common.SHIPPING_DATA
 import com.wp7367.myshoppingapp.common.USERS
 
 import com.wp7367.myshoppingapp.domain_layer.models.category
 import com.wp7367.myshoppingapp.domain_layer.models.ProductModel
 import com.wp7367.myshoppingapp.domain_layer.models.cartItemModel
 import com.wp7367.myshoppingapp.domain_layer.models.favouriteModel
+import com.wp7367.myshoppingapp.domain_layer.models.shippingModel
 
 import com.wp7367.myshoppingapp.domain_layer.models.userData
 import com.wp7367.myshoppingapp.domain_layer.repo.repo
@@ -43,7 +45,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
                 it.toObject(category::class.java)
             }
 
-            trySend(ResultState.Success(categoryData))
+            trySend(ResultState.Success( categoryData))
 
 
         }.addOnFailureListener {
@@ -398,5 +400,46 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
         awaitClose {
             close()
         }
+    }
+
+    override suspend fun shippingAddress(shippingModel: shippingModel): Flow<ResultState<String>> = callbackFlow {
+        
+        trySend(ResultState.Loading)
+        val currentUser = FirebaseAuth.currentUser
+        if (currentUser == null) {
+            trySend(ResultState.Error("User not logged in"))
+            close()
+            return@callbackFlow
+        }
+        FirebaseFirestore.collection(SHIPPING_DATA)
+            .document(FirebaseAuth.currentUser?.uid.toString()).set(shippingModel)
+            .addOnSuccessListener {
+                trySend(ResultState.Success("Address Saved Successfully"))
+            }.addOnFailureListener {
+                trySend(ResultState.Error(it.message.toString()))
+            }
+        awaitClose {
+            close()
+        }
+    }
+
+    override suspend fun showShippingAddressById(): Flow<ResultState<List<shippingModel>>> = callbackFlow {
+
+        trySend(ResultState.Loading)
+
+        FirebaseFirestore.collection(SHIPPING_DATA)
+            .document(FirebaseAuth.currentUser?.uid!!).get()
+            .addOnSuccessListener {
+                val shippingData = it.toObject(shippingModel::class.java)
+
+                trySend(ResultState.Success(listOfNotNull(shippingData)))
+            }.addOnFailureListener {
+                trySend(ResultState.Error(it.message.toString()))
+            }
+        awaitClose {
+            close()
+        }
+
+
     }
 }

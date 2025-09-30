@@ -433,6 +433,12 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
     }
 
 
+
+
+
+
+    //-------------------------------------------------------------------------------//
+
     val _searchQuery = MutableStateFlow("")
 
     fun onSearchQueryChange(query: String){
@@ -474,6 +480,8 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
 
 
 }
+
+
 // _________________________________DATA CLASS_____________________________________
 
 data class getCategoryState(
@@ -572,5 +580,7 @@ data class SearchProductState(
     val error: String ?= null,
     val data:List<ProductModel?> = emptyList()
 )
+
+
 
 

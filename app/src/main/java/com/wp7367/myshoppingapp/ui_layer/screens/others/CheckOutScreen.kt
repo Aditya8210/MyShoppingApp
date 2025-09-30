@@ -50,19 +50,25 @@ import coil.compose.AsyncImage
 import com.wp7367.myshoppingapp.MainActivity
 import com.wp7367.myshoppingapp.domain_layer.models.ProductModel
 import com.wp7367.myshoppingapp.domain_layer.models.cartItemModel
+import com.wp7367.myshoppingapp.domain_layer.models.shippingModel
 import com.wp7367.myshoppingapp.ui_layer.screens.navigation.Routes
 import com.wp7367.myshoppingapp.ui_layer.viewModel.MyViewModel
+import com.wp7367.myshoppingapp.ui_layer.viewModel.ShippingViewModel
 
 
 @Composable
 fun CheckOutScreenUi(
     viewModel: MyViewModel = hiltViewModel(),
+    shippingViewmodel: ShippingViewModel = hiltViewModel(),
     navController: NavController,
     productId: String? // Nullable for cart checkout
 ) {
 
     val productState by viewModel.getProductById.collectAsStateWithLifecycle()
     val cartState by viewModel.getCartItem.collectAsStateWithLifecycle()
+
+    val addressDataState by shippingViewmodel.getShippingAd.collectAsStateWithLifecycle()
+
 
 
 
@@ -79,6 +85,7 @@ fun CheckOutScreenUi(
 
             viewModel.getCartItem() // Optional: if you want to ensure fresh data for cart checkout
         }
+        shippingViewmodel.getShippingDataById()
     }
 
     val isLoading = if (productId != null) productState.isLoading else cartState.isLoading
@@ -150,45 +157,11 @@ fun CheckOutScreenUi(
 
                     Spacer(modifier = Modifier.height(5.dp))
 
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp) // Added vertical padding
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = "Address:",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Row(modifier = Modifier.fillMaxWidth()) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    // Replace with dynamic address data
-                                    Text(text = "Name: Aditya ", style = MaterialTheme.typography.bodyLarge)
-                                    Text(text = "Address Line 1", style = MaterialTheme.typography.bodyMedium)
-                                    Text(text = "Address Line 2", style = MaterialTheme.typography.bodyMedium)
-                                    Text(text = "City, State, Zip", style = MaterialTheme.typography.bodyMedium)
-                                    Text(text = "Country", style = MaterialTheme.typography.bodyMedium)
-                                }
-                                
-                                
-                                IconButton(onClick =
-                                    {
-                                        navController.navigate(Routes.EditAddressScreen)
+                    //Show Shipping Address
 
-                                    
-                                }, modifier = Modifier.padding(end = 8.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.EditNote,
-                                        contentDescription = "Edit",
-                                        tint = MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.size(45.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    AddressScreen(ShippingAddress = addressDataState.data.firstOrNull() ?: shippingModel(), navController)
+
+
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -228,7 +201,9 @@ fun CheckOutScreenUi(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                    Card(modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             paymentOptions.forEach { paymentOption ->
                                 Row(
@@ -326,6 +301,7 @@ fun GetCartItem(cardItem: cartItemModel) {
     }
 }
 
+
 @Composable
 fun ProductItem(productItem: ProductModel) {
     Card(
@@ -345,7 +321,7 @@ fun ProductItem(productItem: ProductModel) {
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(productItem.name, style = MaterialTheme.typography.titleMedium, maxLines = 2) // Using titleMedium
-                 
+
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     "₹${productItem.finalPrice?.toDoubleOrNull()?.let { "%.2f".format(it) } ?: "N/A"}", // Formatted Price
@@ -354,4 +330,51 @@ fun ProductItem(productItem: ProductModel) {
             }
         }
     }
+}
+
+@Composable
+fun AddressScreen(ShippingAddress: shippingModel,navController: NavController) {
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp) // Added vertical padding
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Address:",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.weight(1f)) {
+                    // Replace with dynamic address data
+                    Text(text = ShippingAddress.fullName, style = MaterialTheme.typography.bodyLarge)
+                    Text(text = ShippingAddress.address1, style = MaterialTheme.typography.bodyMedium)
+                    Text(text = ShippingAddress.address2, style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "${ShippingAddress.city}, ${ShippingAddress.state}, ${ShippingAddress.postalCode}", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = ShippingAddress.contactNumber, style = MaterialTheme.typography.bodyMedium)
+                }
+
+
+                IconButton(onClick =
+                    {
+                        navController.navigate(Routes.EditAddressScreen)
+
+
+                    }, modifier = Modifier.padding(end = 8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.EditNote,
+                        contentDescription = "Edit",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(45.dp)
+                    )
+                }
+            }
+        }
+    }
+
+
+
 }

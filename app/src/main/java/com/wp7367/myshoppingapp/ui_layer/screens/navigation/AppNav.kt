@@ -15,12 +15,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -41,7 +42,7 @@ import com.wp7367.myshoppingapp.ui_layer.screens.homeScreenPage.ProfilePage
 
 
 @Composable
-fun AppNav(firebaseAuth: FirebaseAuth,){
+fun AppNav(firebaseAuth: FirebaseAuth){
 
     val navController = rememberNavController()
 
@@ -56,13 +57,13 @@ fun AppNav(firebaseAuth: FirebaseAuth,){
     val currentRoute = navBackStackEntry?.destination?.route
 
     val navItemList = listOf(
-        navItemList("Home",Icons.Default.Home),
-        navItemList("Favorite",Icons.Default.Favorite),
-        navItemList("Cart",Icons.Default.ShoppingCart),
-        navItemList("Profile",Icons.Default.AccountBox)
+        NavItemList("Home",Icons.Default.Home),
+        NavItemList("Favorite",Icons.Default.Favorite),
+        NavItemList("Cart",Icons.Default.ShoppingCart),
+        NavItemList("Profile",Icons.Default.AccountBox)
     )
 
-    var selectedIndex by remember { mutableStateOf(0) }
+    var selectedIndex by remember { mutableIntStateOf(0) }
 
     // Derive shouldShowBottomBar directly from the currentRoute
     // This will automatically update when currentRoute changes
@@ -78,7 +79,7 @@ fun AppNav(firebaseAuth: FirebaseAuth,){
 
 
 
-    var StartScreen = if (firebaseAuth.currentUser == null){
+    val startScreen = if (firebaseAuth.currentUser == null){
         SubNavigation.LogInSignUpScreen
     }
     else{
@@ -92,7 +93,7 @@ fun AppNav(firebaseAuth: FirebaseAuth,){
             // Use shouldShowBottomBar directly (no .value needed because of 'by' delegate)
             if (shouldShowBottomBar) {
             NavigationBar {
-                navItemList.forEachIndexed { index, navItemList ->
+                navItemList.forEachIndexed { index, navItem ->
 
                     NavigationBarItem(
                         selected = selectedIndex == index,
@@ -106,9 +107,9 @@ fun AppNav(firebaseAuth: FirebaseAuth,){
                                 3 -> navController.navigate(Routes.ProfileScreen)
                             }
                         },
-                        label = { Text(navItemList.label) },
+                        label = { Text(navItem.label) },
                         icon = {
-                            Icon(navItemList.icon, contentDescription = navItemList.label)
+                            Icon(navItem.icon, contentDescription = navItem.label)
                         }
                     )
                 }
@@ -126,7 +127,7 @@ fun AppNav(firebaseAuth: FirebaseAuth,){
             )
         )
         {
-            NavHost(navController = navController, startDestination = StartScreen)
+            NavHost(navController = navController, startDestination = startScreen)
             {
 
                 navigation<SubNavigation.LogInSignUpScreen>(startDestination = Routes.LogInScreen){
@@ -168,7 +169,7 @@ fun AppNav(firebaseAuth: FirebaseAuth,){
                 
                 composable <Routes.EditAddressScreen>
                 {
-                    EditAddressScreen(navController = navController)
+                    EditAddressScreen(navController = navController, viewModel = hiltViewModel())
                 }
 
                 composable <Routes.SeeAllProduct>
@@ -184,7 +185,7 @@ fun AppNav(firebaseAuth: FirebaseAuth,){
 
 //------------------ Step 1 ~ Data class for BottomNavBar ~ ----------------------------------
 
-data class navItemList(
+data class NavItemList(
     val label: String,
     val icon: ImageVector,
 )

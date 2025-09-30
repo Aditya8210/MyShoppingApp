@@ -32,9 +32,25 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import android.util.Patterns
+import android.widget.Toast
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.wp7367.myshoppingapp.domain_layer.models.shippingModel
+import com.wp7367.myshoppingapp.ui_layer.viewModel.ShippingViewModel
+
 
 @Composable
-fun EditAddressScreen(modifier: Modifier = Modifier, navController: NavController) {
+fun EditAddressScreen(modifier: Modifier = Modifier, navController: NavController,viewModel: ShippingViewModel = hiltViewModel()) {
+
+    val EditAddress by viewModel.shippingAddressSt.collectAsStateWithLifecycle()
+
+    val context = LocalContext.current
+
+
 
     var email by remember { mutableStateOf("") }
     var fullName by remember { mutableStateOf("") }
@@ -54,6 +70,46 @@ fun EditAddressScreen(modifier: Modifier = Modifier, navController: NavControlle
     var stateError by remember { mutableStateOf<String?>(null) }
 
     val scrollState = rememberScrollState()
+
+
+    when{
+        EditAddress.isLoading ->{
+            Box(modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center){
+                CircularProgressIndicator()
+
+            }
+        }
+        EditAddress.error != null ->{
+            Text(text = EditAddress.error.toString())
+        }
+        EditAddress.data != null ->{
+
+            email = ""
+            fullName =""
+            address1 = ""
+            address2 = ""
+            city = ""
+            contactNumber  = ""
+            pinCode = ""
+            state = ""
+
+            Toast.makeText(context, "Address Add", Toast.LENGTH_SHORT).show()
+
+            viewModel.resetState()
+
+
+        }
+
+    }
+
+
+
+
+
+
+
+
 
     fun validateForm(): Boolean {
         var isValid = true
@@ -258,7 +314,19 @@ fun EditAddressScreen(modifier: Modifier = Modifier, navController: NavControlle
             Button(
                 onClick = {
                     if (validateForm()) {
-                        // Proceed with saving logic
+
+                        val addressData = shippingModel(
+                            email = email,
+                            fullName = fullName,
+                            address1 = address1,
+                            address2 = address2,
+                            city = city,
+                            postalCode = pinCode,
+                            contactNumber  = contactNumber,
+                            state = state,
+
+                        )
+                        viewModel.shippingAddress(addressData)
                     }
                 },
                 modifier = Modifier
