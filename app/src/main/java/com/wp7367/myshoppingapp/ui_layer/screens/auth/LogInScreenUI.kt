@@ -1,5 +1,6 @@
 package com.wp7367.myshoppingapp.ui_layer.screens.auth
 
+import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -9,13 +10,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
@@ -24,17 +23,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -46,219 +48,140 @@ import com.wp7367.myshoppingapp.ui_layer.viewModel.MyViewModel
 
 
 @Composable
-fun  LoginScreen(viewModel: MyViewModel = hiltViewModel(), navController: NavController){
-
-
-//  ~ Here State is Collect ~
+fun LoginScreen(viewModel: MyViewModel = hiltViewModel(), navController: NavController) {
 
     val lgState by viewModel.loginUser.collectAsStateWithLifecycle()
-
-
-
     val context = LocalContext.current
 
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
 
 
-
-    // ----- Media Query style breakpoints -----
-    val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp.dp
-
-    val titleSize: Int
-    val fieldWidth: Dp
-    val buttonWidth: Dp
-    val circleBig: Dp
-    val circleSmall: Dp
-    val circleBigOffsetX: Dp
-    val circleBigOffsetY: Dp
-    val circleSmallOffsetY: Dp
-
-    when {
-        screenWidth < 360.dp -> {
-            // Small phone
-            titleSize = 24
-            fieldWidth = 260.dp
-            buttonWidth = 200.dp
-            circleBig = 160.dp
-            circleSmall = 140.dp
-            circleBigOffsetX = 120.dp
-            circleBigOffsetY = (-40).dp
-            circleSmallOffsetY = 20.dp
-
-        }
-        screenWidth < 600.dp -> {
-            // Normal phone
-            titleSize = 32
-            fieldWidth = 320.dp
-            buttonWidth = 250.dp
-            circleBig = 220.dp
-            circleSmall = 180.dp
-            circleBigOffsetX = 210.dp     //
-            circleBigOffsetY = (-60).dp
-            circleSmallOffsetY = 35.dp
-        }
-        else -> {
-            // Tablet / Foldable
-            titleSize = 40
-            fieldWidth = 400.dp
-            buttonWidth = 300.dp
-            circleBig = 300.dp
-            circleSmall = 260.dp
-            circleBigOffsetX = 250.dp
-            circleBigOffsetY = (-80).dp
-            circleSmallOffsetY = 40.dp
-        }
-    }
-
-
-//     ~ Here State is Manage ~
-    when{
-        lgState.isLoading ->{
-            Box(modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center){
-                CircularProgressIndicator()
-
+        when {
+            lgState.error != null -> {
+                showToast(context, lgState.error!!)
             }
 
-        }
-        lgState.error != null ->{
-            Toast.makeText(context,lgState.error,Toast.LENGTH_SHORT).show()
-
-        }
-        lgState.data != null ->{
-            Toast.makeText(context, "Login Successfully", Toast.LENGTH_SHORT).show()
-
-            navController.navigate(Routes.HomeScreen)
-
-        }
-
-
-
-    }
-
-
-//    ~ Screen UI ~
-
-
-
-    Column (modifier = Modifier
-             .fillMaxSize()
-             .fillMaxWidth()
-             .background(color = Color.White),
-
-
-
-
-    ){
-
-
-
-        val email = remember { mutableStateOf("") }
-        val password = remember { mutableStateOf("") }
-
-
-
-        // New UI
-
-
-
-        Row(
-            modifier = Modifier.fillMaxWidth())
-        {
-            Box(
-                modifier = Modifier
-                    .size(circleBig)
-                    .offset(x = circleBigOffsetX, y = circleBigOffsetY)
-                    .align(Alignment.Top)
-            ) {
-
-                Image(
-                    painter = painterResource(id = R.drawable.circle332212),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize())
-
+            lgState.data != null -> {
+                showToast(context, "Login Successfully")
+                navController.navigate(Routes.HomeScreen) {
+                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                }
             }
-
         }
 
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(color = Color.White)
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.circle332212),
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxWidth(0.6f)
+                .aspectRatio(1f)
+                .align(Alignment.TopEnd)
+                .graphicsLayer {
+                    translationX = size.width / 4
+                    translationY = -size.height / 4
+                }
+        )
+
+        Image(
+            painter = painterResource(id = R.drawable.circle33221),
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxWidth(0.5f)
+                .aspectRatio(1f)
+                .align(Alignment.BottomStart)
+                .graphicsLayer {
+                    translationX = -size.width / 4
+                    translationY = size.height / 4
+                }
+        )
 
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
 
-            ) {
 
-            Text(
-                text = "LOGIN", modifier = Modifier.padding(start = 41.dp),
-                fontSize = titleSize.sp,
-                fontStyle = FontStyle.Normal,
-                fontWeight = FontWeight.ExtraBold,
-                color = Color.Blue
+           Text(
+                text = "LOGIN",
+                modifier = Modifier.padding(bottom = 24.dp),
+                fontSize = 42.sp,
+                fontWeight = FontWeight.Black,
+                color = Color.Blue,
+                style = TextStyle(
+                    shadow = Shadow(
+                        color = Color.Gray.copy(alpha = 0.5f),
+                        offset = Offset(4f, 4f),
+                        blurRadius = 8f
+                    ),
+                    letterSpacing = 3.sp,
+                    fontFamily = FontFamily.Cursive
+                )
             )
 
-        }
-        Spacer(modifier = Modifier.padding(10.dp))
-
-
-        Column(modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally)
-        {
-
-            OutlinedTextField(value  = email.value,
-                onValueChange = {email.value = it},
-                label = { Text(text = "Gmail")
-                },
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text(text = "Gmail") },
                 singleLine = true,
-                modifier = Modifier.width(fieldWidth)
+                modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-
-            OutlinedTextField(value  =password.value ,
-                onValueChange = {password.value = it},
-                label = {Text(text = "Password")},
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text(text = "Password") },
                 visualTransformation = PasswordVisualTransformation(),
                 singleLine = true,
-                modifier = Modifier.width(fieldWidth)
-
+                modifier = Modifier.fillMaxWidth()
             )
 
-
-
-            Row (modifier = Modifier.fillMaxWidth().
-            padding(end = 24.dp),
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(end = 24.dp),
                 horizontalArrangement = Arrangement.End,
-
+            ) {
+                Text(
+                    text = "Forgot Password?",
+                    modifier = Modifier
+                        .padding(vertical = 10.dp)
+                        .clickable {
+                            showToast(context, "Forgot Password")
+                        }
                 )
-            {
-                Text(text = "Forgot Password?", modifier = Modifier.
-                padding(10.dp).
-
-                clickable(onClick =
-                    {
-                        Toast.makeText(context,"Forgot Password",Toast.LENGTH_SHORT).show()
-
-                    }))
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
 
-
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Column(modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally){
-            Button(onClick = {viewModel.loginUser(email.value,password.value)},
-                modifier = Modifier.width(buttonWidth))
-            {
+            Button(
+                onClick = {
+                    if (isValidEmail(email) && password.length > 5) {
+                        viewModel.loginUser(email, password)
+                    } else if (!isValidEmail(email)) {
+                        showToast(context, "Invalid Email")
+                    } else {
+                        showToast(context, "Password must be at least 6 characters long")
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !lgState.isLoading
+            ) {
                 Text(text = "Login")
-
             }
 
-
-            Spacer(modifier = Modifier.height(19.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             Row {
                 Text(text = "Don't have An Account? ")
@@ -266,66 +189,22 @@ fun  LoginScreen(viewModel: MyViewModel = hiltViewModel(), navController: NavCon
                     text = "Sign Up",
                     color = Color.Blue,
                     modifier = Modifier.clickable {
-                        Toast.makeText(context, "Sign Up ", Toast.LENGTH_SHORT).show()
                         navController.navigate(Routes.SignUpScreen)
                     }
                 )
             }
-
-        }
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Column(modifier = Modifier.fillMaxWidth().fillMaxSize(),
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.Bottom) {
-
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Box(modifier = Modifier
-                    .size(circleSmall)
-                    .offset(y = circleSmallOffsetY)
-
-                    .align(Alignment.Bottom)
-                ){
-
-
-                    Image(painter = painterResource(id = R.drawable.circle33221),
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize())
-                }
-
-            }
         }
 
-
-//    ----------------------------------------------------------------------------------------
-
-//           Old UI
-
-//        OutlinedTextField(
-//            value = email.value,
-//            onValueChange = { email.value = it },
-//            label = { Text("Gmail") }
-//
-//        )
-//
-//        OutlinedTextField(
-//            value = password.value,
-//            onValueChange = { password.value = it },
-//            label = { Text("PASSWORD") }
-//
-//        )
-//
-//
-//
-//        Button(onClick = {
-//
-//            viewModel.loginUser(email.value,password.value)
-//        }) {
-//            Text(text = "Login")
-//
-//        }
-
-
+        if (lgState.isLoading) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        }
     }
+}
 
+private fun showToast(context: Context, message: String) {
+    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+}
+
+private fun isValidEmail(email: String): Boolean {
+    return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
 }

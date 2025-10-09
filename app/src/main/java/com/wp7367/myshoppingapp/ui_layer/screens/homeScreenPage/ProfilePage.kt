@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,10 +18,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AddTask
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Logout
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -36,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Green
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -44,6 +49,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
+import com.wp7367.myshoppingapp.R
 import com.wp7367.myshoppingapp.domain_layer.models.userData
 import com.wp7367.myshoppingapp.ui_layer.viewModel.MyViewModel
 import com.wp7367.myshoppingapp.ui_layer.screens.navigation.Routes
@@ -52,16 +58,12 @@ import com.wp7367.myshoppingapp.ui_layer.screens.navigation.Routes
 @Composable
 fun ProfilePage(viewModels: MyViewModel = hiltViewModel(), navController: NavController, firebaseAuth: FirebaseAuth) {
 
-    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(key1 = Unit) {
         viewModels.getUserData(firebaseAuth.currentUser?.uid.toString())
     }
 
     val profileSt = viewModels.getUserData.collectAsStateWithLifecycle()
-
-
-
 
     val context = LocalContext.current
 
@@ -72,7 +74,7 @@ fun ProfilePage(viewModels: MyViewModel = hiltViewModel(), navController: NavCon
     val lastname  = remember { mutableStateOf("") }
     val email     = remember { mutableStateOf("") }
     val phone     = remember { mutableStateOf("") }
-    val address   = remember { mutableStateOf("") }
+
 
     //  To Know The User Click Edit or Not
     val isEditing = remember { mutableStateOf(false) }
@@ -84,7 +86,7 @@ fun ProfilePage(viewModels: MyViewModel = hiltViewModel(), navController: NavCon
             lastname.value = it?.lastName.toString()
             email.value = it?.email.toString()
             phone.value = it?.phoneNumber.toString()
-            address.value = it?.address.toString()
+
         }
     }
 
@@ -104,209 +106,224 @@ fun ProfilePage(viewModels: MyViewModel = hiltViewModel(), navController: NavCon
     else if(profileSt.value.data != null){
 
 
-        Column(modifier = Modifier.fillMaxSize()
-            .background(color = Color.White))
-        {
+//
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(color = Color.White)
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.circle332212),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth(0.6f)
+                    .aspectRatio(1f)
+                    .align(Alignment.TopEnd)
+                    .graphicsLayer {
+                        translationX = size.width / 4
+                        translationY = -size.height / 4
+                    }
+            )
+
+            Image(
+                painter = painterResource(id = R.drawable.circle33221),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth(0.5f)
+                    .aspectRatio(1f)
+                    .align(Alignment.BottomStart)
+                    .graphicsLayer {
+                        translationX = -size.width / 4
+                        translationY = size.height / 4
+                    }
+            )
 
 
-            Row(
-                modifier = Modifier.fillMaxWidth())
-
+            Column(modifier = Modifier.fillMaxSize())
             {
-                Box(modifier = Modifier
-                    .padding(top = 60.dp, start = 12.dp)){
-                    Image(painter = painterResource(id = com.wp7367.myshoppingapp.R.drawable.profile332553),contentDescription = null,
-                        Modifier.size(140.dp))
-
-                }
-
                 Box(
                     modifier = Modifier
-                        .size(235.dp)
-                        .offset(x = 20.dp, y = (-60).dp)
+                        .padding(top = 60.dp, start = 12.dp)
                 ) {
-
                     Image(
-                        painter = painterResource(id = com.wp7367.myshoppingapp.R.drawable.circle332212),
+                        painter = painterResource(id = com.wp7367.myshoppingapp.R.drawable.profile332553),
                         contentDescription = null,
-                        modifier = Modifier.fillMaxSize())
+                        Modifier.size(140.dp)
+                    )
 
                 }
 
-            }
-
-         Row( modifier = Modifier.padding(start = 15.dp))
-         {
-             Text(text = "My Profile:",
-             fontSize = MaterialTheme.typography.headlineLarge.fontSize,
-             )
+                Row(modifier = Modifier.padding(12.dp)){
+                    Text(
+                        text = "My Profile:",
+                        fontSize = MaterialTheme.typography.headlineLarge.fontSize,
+                    )
 
 
-             Spacer(modifier = Modifier.padding(10.dp))
+                    Spacer(modifier = Modifier.padding(10.dp))
 
-             if (isEditing.value == false) {
-                 OutlinedButton(
-                     onClick = { isEditing.value = !isEditing.value },
-                     modifier = Modifier.size(width = 70.dp, height = 40.dp),
-                     shape = RoundedCornerShape(10.dp),
-                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF38E076))
-                 ) {
-                    Icon(imageVector = Icons.Rounded.Edit,contentDescription = null)
-                 }
-             }else {
+                    if (isEditing.value == false) {
+                        OutlinedButton(
+                            onClick = { isEditing.value = !isEditing.value },
+                            modifier = Modifier.size(width = 70.dp, height = 40.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF38E076))
+                        ) {
+                            Icon(imageVector = Icons.Rounded.Edit, contentDescription = null)
+                        }
+                    } else {
 
-                 OutlinedButton(
-                     onClick = {
-                         val updatedata = userData(
-                             firstName = firstname.value,
-                             lastName = lastname.value,
-                             email = email.value,
-                             phoneNumber = phone.value,
-                             address = address.value
-                         )
+                        OutlinedButton(
+                            onClick = {
+                                val updatedata = userData(
+                                    firstName = firstname.value,
+                                    lastName = lastname.value,
+                                    email = email.value,
+                                    phoneNumber = phone.value,
 
-                         viewModels.updateUser(updatedata)
+                                )
 
-                         isEditing.value = !isEditing.value
+                        viewModels.updateUser(updatedata)
 
-
-
-                         Toast.makeText(context, "Profile Updated", Toast.LENGTH_SHORT).show()
-                     },
-
-                     modifier = Modifier.size(width = 100.dp, height = 40.dp),
-
-                     shape = RoundedCornerShape(10.dp),
-                     colors = ButtonDefaults.buttonColors(containerColor = Green)
-                 ) {
-                     Text(text = "Save", color = Color.Blue)
-                     Icon(imageVector = Icons.Rounded.CheckCircle,contentDescription = null)
-                 }
-             }
+                        isEditing.value = !isEditing.value
 
 
+                        Toast.makeText(context, "Profile Updated", Toast.LENGTH_SHORT).show()
+                            },
 
-         }
+                            modifier = Modifier.size(width = 100.dp, height = 40.dp),
 
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-
-        Column (modifier = Modifier.fillMaxSize().padding(10.dp)
-
-
-
-        )
-        {
-
-            Row (modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp))
-            {
-
-
-                OutlinedTextField(value = firstname.value,
-                    modifier = Modifier.weight(1f),
-                    readOnly = if (isEditing.value) false else true,
-
-                    onValueChange = { firstname.value = it },
-                    label = { Text(text = "FirstName") },
-
-
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
-                )
-
-                OutlinedTextField(value = lastname.value,
-                    modifier = Modifier.weight(1f),
-                    readOnly = if (isEditing.value) false else true,
-                    onValueChange = {lastname.value = it},
-                    label = { Text(text = "LastName") },
-
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
-                )
-
-            }
-            Spacer(modifier = Modifier.height(5.dp))
-
-            OutlinedTextField(value = email.value,
-                onValueChange = {email.value = it},
-                modifier = Modifier.fillMaxWidth(),
-                readOnly = if (isEditing.value) false else true,
-
-                label = { Text(text = "Email") },
-
-            )
-            Spacer(modifier = Modifier.height(5.dp))
-
-            OutlinedTextField(value =phone.value,
-                modifier = Modifier.fillMaxWidth(),
-                readOnly = if (isEditing.value) false else true,
-                onValueChange = {phone.value = it},
-                singleLine = true,
-                label = { Text(text = "Phone") },
-
-            )
-            Spacer(modifier = Modifier.height(5.dp))
-
-            OutlinedTextField(value = address.value,
-                modifier = Modifier.fillMaxWidth(),
-                readOnly = if (isEditing.value) false else true,
-                onValueChange = {address.value = it},
-                label = { Text(text = "Address") },
-
-            )
-            Spacer(modifier = Modifier.height(30.dp))
-
-            Column (modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
-                )
-
-            {
-
-
-
-                OutlinedButton(
-                    onClick = {
-                        firebaseAuth.signOut()
-                        navController.navigate(Routes.LogInScreen)
-                    },
-                    modifier = Modifier.size(width = 150.dp, height = 50.dp),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE73D77))
-                ) {
-                    Text(text = "LogOut", color = Color.Black)
-
-                    Icon(imageVector = Icons.Rounded.Logout,contentDescription = null)
-                }
-
-
-            }
-
-
-            Column(modifier = Modifier.fillMaxWidth().fillMaxSize(),
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.Bottom) {
-
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    Box(modifier = Modifier.size(225.dp)
-                        .offset(x = (-60).dp, y = (+12).dp)
-                    ){
-
-
-                        Image(painter = painterResource(id = com.wp7367.myshoppingapp.R.drawable.circle33221),
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize())
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Green)
+                        ) {
+                            Text(text = "Save", color = Color.Blue)
+                            Icon(imageVector = Icons.Rounded.CheckCircle, contentDescription = null)
+                        }
                     }
 
                 }
+
+
+                Spacer(modifier = Modifier.height(5.dp))
+
+
+                Column(modifier = Modifier.padding(start = 10.dp,end = 10.dp))
+                {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    )
+                    {
+
+                        OutlinedTextField(
+                            value = firstname.value,
+                            modifier = Modifier.weight(1f),
+                            readOnly = if (isEditing.value) false else true,
+                            onValueChange = { firstname.value = it },
+                            label = { Text(text = "FirstName") },
+                            singleLine = true,
+
+                        )
+
+                        OutlinedTextField(
+                            value = lastname.value,
+                            modifier = Modifier.weight(1f),
+                            readOnly = if (isEditing.value) false else true,
+                            onValueChange = { lastname.value = it },
+                            label = { Text(text = "LastName") },
+                            singleLine = true,
+
+                        )
+
+                    }
+                    Spacer(modifier = Modifier.height(5.dp))
+
+
+                    OutlinedTextField(
+                        value = email.value,
+                        onValueChange = { email.value = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        readOnly = if (isEditing.value) false else true,
+
+                        label = { Text(text = "Email") },
+
+                        )
+                    Spacer(modifier = Modifier.height(5.dp))
+
+                    OutlinedTextField(
+                        value = phone.value,
+                        modifier = Modifier.fillMaxWidth(),
+                        readOnly = if (isEditing.value) false else true,
+                        onValueChange = { phone.value = it },
+                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        label = { Text(text = "Phone") },
+
+                        )
+                }
+
+                Spacer(modifier = Modifier.height(45.dp))
+
+                Row (modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp))
+                {
+                    Card(modifier = Modifier.weight(1f)
+                        .size(70.dp)
+                        .padding(start = 10.dp))
+                    {
+                        Column(modifier = Modifier.fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center)
+                        {
+                            Icon(imageVector = Icons.Rounded.Home, contentDescription = null)
+                            Text(text = "Address")
+
+                        }
+                    }
+                    Card(modifier = Modifier.weight(1f)
+                        .size(70.dp)
+                        .padding(end = 10.dp))
+                    {
+                        Column(modifier = Modifier.fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center)
+                        {
+                            Icon(imageVector = Icons.Rounded.AddTask, contentDescription = null)
+                            Text(text = "Your Order")
+
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(30.dp))
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                )
+                {
+
+                    OutlinedButton(
+                        onClick = {
+                        firebaseAuth.signOut()
+                        navController.navigate(Routes.LogInScreen)
+                        },
+                        modifier = Modifier.size(width = 150.dp, height = 50.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE73D77))
+                    ) {
+                        Text(text = "LogOut", color = Color.Black)
+
+                        Icon(imageVector = Icons.Rounded.Logout, contentDescription = null)
+                    }
+
+
+                }
+
+
             }
-
-          }
-
-
-
 
         }
 

@@ -7,7 +7,6 @@ data class userData(
     val email: String = "",
     val password: String = "",
     val phoneNumber: String = "",
-    val address: String = "",
     var uid: String = "",
     val userImage: String = "",
 )
