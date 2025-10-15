@@ -17,8 +17,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items // Added for LazyColumn items extension
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.RadioButton
-import androidx.compose.material.Scaffold
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.rounded.EditNote
@@ -47,12 +47,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.google.firebase.auth.FirebaseAuth
 import com.wp7367.myshoppingapp.MainActivity
 import com.wp7367.myshoppingapp.domain_layer.models.ProductModel
 import com.wp7367.myshoppingapp.domain_layer.models.cartItemModel
+import com.wp7367.myshoppingapp.domain_layer.models.orderModel
 import com.wp7367.myshoppingapp.domain_layer.models.shippingModel
 import com.wp7367.myshoppingapp.ui_layer.screens.navigation.Routes
 import com.wp7367.myshoppingapp.ui_layer.viewModel.MyViewModel
+import com.wp7367.myshoppingapp.ui_layer.viewModel.OrderViewModel
 import com.wp7367.myshoppingapp.ui_layer.viewModel.ShippingViewModel
 
 
@@ -60,14 +63,23 @@ import com.wp7367.myshoppingapp.ui_layer.viewModel.ShippingViewModel
 fun CheckOutScreenUi(
     viewModel: MyViewModel = hiltViewModel(),
     shippingViewmodel: ShippingViewModel = hiltViewModel(),
+    orderViewModel: OrderViewModel = hiltViewModel(),
     navController: NavController,
     productId: String? // Nullable for cart checkout
 ) {
+
+
+    // ~Here State is Collect~
 
     val productState by viewModel.getProductById.collectAsStateWithLifecycle()
     val cartState by viewModel.getCartItem.collectAsStateWithLifecycle()
 
     val addressDataState by shippingViewmodel.getShippingAd.collectAsStateWithLifecycle()
+
+    val orderState = orderViewModel.orderState.collectAsStateWithLifecycle()
+
+
+
 
 
 
@@ -76,7 +88,9 @@ fun CheckOutScreenUi(
     val paymentOptions = listOf("Online payment", "Cash on delivery")
 
     val context = LocalContext.current
-    val activity = context as? MainActivity
+    val activity = context as? MainActivity      //step -6
+
+
 
     LaunchedEffect(key1 = productId) { // Re-trigger if productId changes
         if (productId != null) {
@@ -88,6 +102,23 @@ fun CheckOutScreenUi(
         shippingViewmodel.getShippingDataById()
     }
 
+    LaunchedEffect(orderState.value.data, orderState.value.error) {
+        val data = orderState.value.data
+        val error = orderState.value.error
+
+        when {
+            data.isNotEmpty() -> {
+                Toast.makeText(context, data, Toast.LENGTH_SHORT).show()
+//                navController.navigate(Routes.OrderConfirmationScreen)
+            }
+
+            error.isNotEmpty() -> {
+                Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+
     val isLoading = if (productId != null) productState.isLoading else cartState.isLoading
     val error = if (productId != null) productState.error else cartState.error
     val productData = productState.data
@@ -97,7 +128,9 @@ fun CheckOutScreenUi(
         if (productId != null) {
             productData?.finalPrice?.toDoubleOrNull() ?: 0.0
         } else {
-            cartData?.sumOf { it?.price?.toDoubleOrNull() ?: 0.0 } ?: 0.0
+            cartData?.sumOf {
+                (it?.price?.toDoubleOrNull() ?: 0.0) * (it?.quantity ?: 1)
+            } ?: 0.0
         }
     }
 
@@ -108,6 +141,9 @@ fun CheckOutScreenUi(
             cartData?.firstOrNull()?.name ?: "Your Order"
         }
     }
+
+
+
 
 
     when {
@@ -246,11 +282,53 @@ fun CheckOutScreenUi(
                                     amount = amountInPaise,
                                     name = primaryItemName
                                 )
-                            } else { // Cash on delivery
-                                // Implement your order placement logic for COD here
-                                Toast.makeText(context, "Order Placed Successfully (Cash on Delivery)", Toast.LENGTH_SHORT).show()
-                                // Example: viewModel.placeOrder(cartData or productData, "COD")
-                                // Example: navController.navigate("orderConfirmationScreen")
+                            } else {// Cash on Delivery
+                                val shippingAddress = addressDataState.data.firstOrNull()
+                                val userEmail = FirebaseAuth.getInstance().currentUser?.email ?: ""
+
+                                if (shippingAddress == null) {
+                                    Toast.makeText(context, "No shipping address found", Toast.LENGTH_SHORT).show()
+                                    return@Button
+                                }
+
+                                // Create Order List
+                                val orderList = if (productId != null && productData != null) {
+                                    listOf(
+                                        orderModel(
+                                            orderId = "",
+                                            productId = productData.productId ?: "",
+                                            productName = productData.name,
+                                            productDescription = productData.description ?: "",
+                                            productQty = "1",
+                                            productFinalPrice = productData.finalPrice ?: "0",
+                                            productCategory = productData.category ?: "",
+                                            productImageUrl = productData.image ?: "",
+                                            color = "",
+                                            size = "",
+                                            transactionMethod = selectedPaymentMethod,
+                                            transactionId = "",
+                                            email = userEmail,
+                                            contactNumber = shippingAddress.contactNumber,
+                                            fullName = shippingAddress.fullName,
+                                            address = "${shippingAddress.address1}, ${shippingAddress.city}, ${shippingAddress.state} - ${shippingAddress.postalCode}",
+                                            status = "Pending"
+                                        )
+                                    )
+                                } else {
+                                    createOrderListFromCart(
+                                        cartList = cartData?.filterNotNull() ?: emptyList(),
+                                        address = shippingAddress,
+                                        paymentMethod = selectedPaymentMethod
+                                    )
+                                }
+
+                                // ✅ Save Order
+                                orderViewModel.orderDataSave(orderList)
+
+                                // ✅ Optional: Show message and navigate after success
+                                Toast.makeText(context, "Placing Order...", Toast.LENGTH_SHORT).show()
+
+
                             }
                         },
                         modifier = Modifier
@@ -260,7 +338,7 @@ fun CheckOutScreenUi(
                     ) {
                         Text(
                             text = if (selectedPaymentMethod == "Cash on delivery") "Order Now" else "Pay Now (₹${"%.2f".format(currentTotalAmount)})",
-                            style = MaterialTheme.typography.labelLarge // Using MaterialTheme
+
                         )
                     }
                 }
@@ -268,6 +346,34 @@ fun CheckOutScreenUi(
         }
     }
 }
+
+fun createOrderListFromCart(
+    cartList: List<cartItemModel>,
+    address: shippingModel,
+    paymentMethod: String
+): List<orderModel> {
+    return cartList.map { cartItem ->
+        orderModel(
+            orderId = "",
+            productId = cartItem.productId ?: "",
+            productName = cartItem.name,
+            productQty = cartItem.quantity.toString(),
+            productFinalPrice = cartItem.price ?: "0",
+            productCategory = cartItem.name ?: "",
+            productImageUrl = cartItem.imageUrl ?: "",
+//            color = cartItem.color ?: "",
+//            size = cartItem.size ?: "",
+            transactionMethod = paymentMethod,
+            transactionId = "",
+            email = address.email,
+            contactNumber = address.contactNumber,
+            fullName = address.fullName,
+            address = "${address.address1},${address.address1}, ${address.city}, ${address.state} - ${address.postalCode}",
+            status = "Pending"
+        )
+    }
+}
+
 
 @Composable
 fun GetCartItem(cardItem: cartItemModel) {

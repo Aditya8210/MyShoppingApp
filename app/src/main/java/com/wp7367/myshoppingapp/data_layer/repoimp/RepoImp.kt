@@ -8,6 +8,8 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.wp7367.myshoppingapp.common.CART
 import com.wp7367.myshoppingapp.common.CATEGORY
 import com.wp7367.myshoppingapp.common.FAVOURITE
+import com.wp7367.myshoppingapp.common.ORDER
+import com.wp7367.myshoppingapp.common.ORDER_DATA
 import com.wp7367.myshoppingapp.common.PRODUCT
 
 import com.wp7367.myshoppingapp.common.ResultState
@@ -18,6 +20,7 @@ import com.wp7367.myshoppingapp.domain_layer.models.category
 import com.wp7367.myshoppingapp.domain_layer.models.ProductModel
 import com.wp7367.myshoppingapp.domain_layer.models.cartItemModel
 import com.wp7367.myshoppingapp.domain_layer.models.favouriteModel
+import com.wp7367.myshoppingapp.domain_layer.models.orderModel
 import com.wp7367.myshoppingapp.domain_layer.models.shippingModel
 
 import com.wp7367.myshoppingapp.domain_layer.models.userData
@@ -198,7 +201,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
         val currentUser = FirebaseAuth.currentUser
         if (currentUser == null) {
             trySend(ResultState.Error("User not logged in"))
-            close() 
+            close()
             return@callbackFlow
         }
 
@@ -403,7 +406,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
     }
 
     override suspend fun shippingAddress(shippingModel: shippingModel): Flow<ResultState<String>> = callbackFlow {
-        
+
         trySend(ResultState.Loading)
         val currentUser = FirebaseAuth.currentUser
         if (currentUser == null) {
@@ -442,4 +445,27 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
 
 
     }
+
+    override suspend fun orderDataSave(orderList: List<orderModel>): Flow<ResultState<String>>  = callbackFlow{
+
+        trySend(ResultState.Loading)
+        val orderMap =
+            orderList.mapIndexed { index, order -> index.toString() to order }.toMap()
+        FirebaseFirestore.collection(ORDER_DATA)
+            .document(FirebaseAuth.currentUser?.uid.toString()).collection(ORDER).document()
+            .set(orderMap).addOnSuccessListener {
+                trySend(ResultState.Success("Order Successfully"))
+//                pushNotification.sendNotification(
+//                    title = "Order Initiate",
+//                    message = "Order Successfully"
+//                )
+            }.addOnFailureListener {
+                trySend(ResultState.Error(it.message.toString()))
+            }
+        awaitClose {
+            close()
+        }
+    }
+
+
 }

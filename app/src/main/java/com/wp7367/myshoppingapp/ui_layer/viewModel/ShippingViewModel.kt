@@ -3,8 +3,8 @@ package com.wp7367.myshoppingapp.ui_layer.viewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wp7367.myshoppingapp.common.ResultState
-import com.wp7367.myshoppingapp.data_layer.useCase.GetShippingAddressByIdUseCase
-import com.wp7367.myshoppingapp.data_layer.useCase.ShippingAddressUseCase
+import com.wp7367.myshoppingapp.domain_layer.useCase.GetShippingAddressByIdUseCase
+import com.wp7367.myshoppingapp.domain_layer.useCase.ShippingAddressUseCase
 import com.wp7367.myshoppingapp.domain_layer.models.shippingModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
