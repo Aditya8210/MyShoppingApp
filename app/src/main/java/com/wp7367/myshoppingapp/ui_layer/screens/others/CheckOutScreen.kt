@@ -239,15 +239,15 @@ fun CheckOutScreenUi(
 
                     Card(modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp)) {
-                        Column(modifier = Modifier.padding(16.dp)) {
+                        .padding(vertical = 5.dp)) {
+                        Column(modifier = Modifier.padding(13.dp)) {
                             paymentOptions.forEach { paymentOption ->
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable { selectedPaymentMethod = paymentOption }
-                                        .padding(vertical = 8.dp) // Adjusted padding
+                                        .padding(vertical = 5.dp) // Adjusted padding
                                 ) {
                                     RadioButton(
                                         selected = (selectedPaymentMethod == paymentOption),
@@ -311,7 +311,7 @@ fun CheckOutScreenUi(
                                             contactNumber = shippingAddress.contactNumber,
                                             fullName = shippingAddress.fullName,
                                             address = "${shippingAddress.address1}, ${shippingAddress.city}, ${shippingAddress.state} - ${shippingAddress.postalCode}",
-                                            status = "Pending"
+                                            status = "",
                                         )
                                     )
                                 } else {
@@ -338,7 +338,8 @@ fun CheckOutScreenUi(
                     ) {
                         Text(
                             text = if (selectedPaymentMethod == "Cash on delivery") "Order Now" else "Pay Now (₹${"%.2f".format(currentTotalAmount)})",
-
+                            color = Color.White,
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                         )
                     }
                 }

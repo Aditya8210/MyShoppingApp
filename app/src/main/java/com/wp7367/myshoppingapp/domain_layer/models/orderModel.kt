@@ -2,7 +2,7 @@ package com.wp7367.myshoppingapp.domain_layer.models
 
 data class orderModel(
 
-    val orderId: String = "",
+    var orderId: String = "",
     var productId: String = "",
     val productName: String = "",
     val productDescription: String = "",
@@ -19,6 +19,6 @@ data class orderModel(
     val contactNumber: String = "",
     val fullName: String = "",
     val address: String = "",
-    val status: String = "",
+    var status: String = "Processing",
 
     )

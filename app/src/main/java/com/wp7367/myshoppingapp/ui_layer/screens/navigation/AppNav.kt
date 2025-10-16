@@ -39,6 +39,8 @@ import com.wp7367.myshoppingapp.ui_layer.screens.auth.SignUpScreen
 import com.wp7367.myshoppingapp.ui_layer.screens.homeScreenPage.CartPage
 import com.wp7367.myshoppingapp.ui_layer.screens.homeScreenPage.FavoritePage
 import com.wp7367.myshoppingapp.ui_layer.screens.homeScreenPage.ProfilePage
+import com.wp7367.myshoppingapp.ui_layer.screens.others.OrderScreen
+import com.wp7367.myshoppingapp.ui_layer.viewModel.OrderViewModel
 
 
 @Composable
@@ -176,6 +178,13 @@ fun AppNav(firebaseAuth: FirebaseAuth){
                 {
                     SeeAllProductUi(navController = navController)
                 }
+
+                composable <Routes.OrderHistoryScreen>
+                {
+                    OrderScreen(navController = navController, orderViewmodel = hiltViewModel())
+                }
+
+
             }
         }
     }
@@ -189,4 +198,3 @@ data class NavItemList(
     val label: String,
     val icon: ImageVector,
 )
-

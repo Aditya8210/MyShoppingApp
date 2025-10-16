@@ -446,19 +446,79 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
 
     }
 
-    override suspend fun orderDataSave(orderList: List<orderModel>): Flow<ResultState<String>>  = callbackFlow{
-
+    override suspend fun orderDataSave(orderList: List<orderModel>): Flow<ResultState<String>> = callbackFlow {
         trySend(ResultState.Loading)
+
+        val newOrderRef = FirebaseFirestore.collection(ORDER_DATA)
+            .document(FirebaseAuth.currentUser?.uid.toString())
+            .collection(ORDER)
+            .document()
+
+        val orderId = newOrderRef.id
+
+        val updatedOrderList = orderList.map { it.copy(orderId = orderId) }
+
         val orderMap =
-            orderList.mapIndexed { index, order -> index.toString() to order }.toMap()
-        FirebaseFirestore.collection(ORDER_DATA)
-            .document(FirebaseAuth.currentUser?.uid.toString()).collection(ORDER).document()
-            .set(orderMap).addOnSuccessListener {
-                trySend(ResultState.Success("Order Successfully"))
+            updatedOrderList.mapIndexed { index, order -> index.toString() to order }.toMap()
+
+        newOrderRef.set(orderMap).addOnSuccessListener {
+            trySend(ResultState.Success("Order Successfully"))
 //                pushNotification.sendNotification(
 //                    title = "Order Initiate",
 //                    message = "Order Successfully"
 //                )
+        }.addOnFailureListener {
+            trySend(ResultState.Error(it.message.toString()))
+        }
+        awaitClose {
+            close()
+        }
+    }
+
+    override suspend fun getOrderData(): Flow<ResultState<List<orderModel>>> = callbackFlow {
+
+
+        trySend(ResultState.Loading)
+        FirebaseFirestore.collection(ORDER_DATA).document(FirebaseAuth.currentUser?.uid.toString())
+            .collection(ORDER).get().addOnSuccessListener { querySnapshot ->
+                val allOrders = mutableListOf<orderModel>()
+
+                querySnapshot.documents.forEach { document ->
+                    // Iterate over all fields in the document
+                    val maps = document.data // Get all the fields as a Map<String, Any>
+                    maps?.forEach { (_, value) ->
+                        val orderMap = value as? Map<*, *> // Cast each value to Map
+                        orderMap?.let {
+                            val order =  orderModel(
+                                color = it["color"] as? String ?: "",
+                                date = it["date"] as? Long ?: 0,
+                                fullName = it["fullName"] as? String ?: "",
+                                contactNumber = it["mobileNo"] as? String ?: "",
+                                productCategory = it["productCategory"] as? String ?: "",
+                                productId = it["productId"] as? String ?: "",
+                                productDescription = it["productDescription"] as? String ?: "",
+                                productFinalPrice = it["productFinalPrice"] as? String ?: "",
+                                productImageUrl = it["productImageUrl"] as? String ?: "",
+                                productName = it["productName"] as? String ?: "",
+                                productQty = it["productQty"] as? String ?: "",
+                                size = it["size"] as? String ?: "",
+                                transactionId = it["transactionId"] as? String ?: "",
+                                transactionMethod = it["transactionMethod"] as? String ?: "",
+                                address = it["userAddress"] as? String ?: "",
+                                email = it["userEmail"] as? String ?: "",
+                                orderId = it["orderId"] as? String ?: "",
+                            )
+                            allOrders.add(order)
+                        }
+                    }
+                }
+                if (allOrders.isEmpty()) {
+                    trySend(ResultState.Error("No orders found"))
+                } else {
+                    trySend(ResultState.Success(allOrders))
+                }
+
+                Log.d("@order", "getAllOrderData: ${allOrders.get(0).productName}")
             }.addOnFailureListener {
                 trySend(ResultState.Error(it.message.toString()))
             }
@@ -466,6 +526,8 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
             close()
         }
     }
+
+
 
 
 }

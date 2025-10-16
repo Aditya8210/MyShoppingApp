@@ -49,4 +49,8 @@ sealed class Routes {
     @Serializable
     object SeeAllProduct
 
+    @Serializable
+    object OrderHistoryScreen
+
+
 }

@@ -13,5 +13,3 @@ data class ProductModel(
     val createdBy: String= "",
     var productId: String = "",
 )
-
-

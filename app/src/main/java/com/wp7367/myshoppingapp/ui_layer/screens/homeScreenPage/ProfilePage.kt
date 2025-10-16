@@ -283,7 +283,8 @@ fun ProfilePage(viewModels: MyViewModel = hiltViewModel(), navController: NavCon
                     }
                     Card(modifier = Modifier.weight(1f)
                         .size(70.dp)
-                        .padding(end = 10.dp))
+                        .padding(end = 10.dp),
+                        onClick = {navController.navigate(Routes.OrderHistoryScreen)})
                     {
                         Column(modifier = Modifier.fillMaxSize(),
                             horizontalAlignment = Alignment.CenterHorizontally,

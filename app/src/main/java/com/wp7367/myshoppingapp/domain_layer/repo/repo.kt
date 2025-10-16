@@ -54,6 +54,10 @@ interface repo  {
 
   suspend fun orderDataSave(orderList: List<orderModel>) : Flow<ResultState<String>>
 
+  suspend fun getOrderData(): Flow<ResultState<List<orderModel>>>
+
+
+
 
 
 }
