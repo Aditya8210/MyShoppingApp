@@ -50,6 +50,8 @@ interface repo  {
 
   suspend fun shippingAddress(shippingModel: shippingModel): Flow<ResultState<String>>
 
+  suspend fun deleteShippingAddress(shippingModel: shippingModel): Flow<ResultState<String>>
+
   suspend fun showShippingAddressById(): Flow<ResultState<List<shippingModel>>>
 
   suspend fun orderDataSave(orderList: List<orderModel>) : Flow<ResultState<String>>

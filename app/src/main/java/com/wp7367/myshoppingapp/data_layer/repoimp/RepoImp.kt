@@ -426,6 +426,26 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
         }
     }
 
+    override suspend fun deleteShippingAddress(shippingModel: shippingModel): Flow<ResultState<String>>  = callbackFlow{
+
+        trySend(ResultState.Loading)
+        val currentUser = FirebaseAuth.currentUser
+        if (currentUser == null) {
+            trySend(ResultState.Error("User not logged in"))
+            close()
+            return@callbackFlow
+        }
+        FirebaseFirestore.collection(SHIPPING_DATA).document(currentUser.uid).delete()
+            .addOnSuccessListener {
+                trySend(ResultState.Success("Address Deleted Successfully"))
+            }.addOnFailureListener {
+                trySend(ResultState.Error(it.message.toString()))
+            }
+        awaitClose {
+            close()
+        }
+    }
+
     override suspend fun showShippingAddressById(): Flow<ResultState<List<shippingModel>>> = callbackFlow {
 
         trySend(ResultState.Loading)

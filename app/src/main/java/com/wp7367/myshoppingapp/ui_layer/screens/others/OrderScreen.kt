@@ -21,11 +21,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -62,80 +65,86 @@ fun OrderScreen(navController: NavController, orderViewmodel: OrderViewModel) {
 
     val context = LocalContext.current
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(color = Color.White)
-            .padding(16.dp),
-        horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Top
-    ) {
 
-        Spacer(Modifier.height(8.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start,
-            modifier = Modifier.clickable(
-                interactionSource = remember {
-                    MutableInteractionSource()
-                },
-                indication = null
-            ) {
-                navController.navigateUp()
-            }
+
+
+    Scaffold { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .background(color = Color.White)
+
+                .padding(start =16.dp, end = 16.dp ) // Adjusted padding
         ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp),
-                tint = Color.Gray
-            )
-            Text(
-                text = "Return to Profile", style = TextStyle(
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.W600,
-                    color = Color.Gray,
-                )
-            )
-        }
-        Spacer(Modifier.height(16.dp))
 
-        when {
-            getAllOrderState.value.isLoading -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = Color.Black)
+            // Top Bar
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(top = 2.dp)
+            ) {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back"
+                    )
                 }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "All Order:",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = "Continue Shopping",
+                    color = Color.Gray,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(end = 4.dp)
+                )
             }
 
-            getAllOrderState.value.data != null -> {
-                val orderList = getAllOrderState.value.data
-                if (orderList!!.isNotEmpty()) {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        items(orderList) { order ->
-                            OrderView(orderModel = order)
-                        }
-                    }
-                    Log.d("@order", "OrderScreen: ")
-                } else {
+
+            Spacer(modifier = Modifier.height(5.dp))
+
+
+            when {
+                getAllOrderState.value.isLoading -> {
                     Box(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(text = "No orders found.")
+                        CircularProgressIndicator(color = Color.Black)
                     }
                 }
-            }
 
-            getAllOrderState.value.error.isNotEmpty() -> {
-                Toast.makeText(context, getAllOrderState.value.error, Toast.LENGTH_SHORT).show()
+                getAllOrderState.value.data != null -> {
+                    val orderList = getAllOrderState.value.data
+                    if (orderList!!.isNotEmpty()) {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(orderList) { order ->
+                                OrderView(orderModel = order)
+                            }
+                        }
+                        Log.d("@order", "OrderScreen: ")
+                    } else {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(text = "No orders found.")
+                        }
+                    }
+                }
+
+                getAllOrderState.value.error.isNotEmpty() -> {
+                    Toast.makeText(context, getAllOrderState.value.error, Toast.LENGTH_SHORT).show()
+                }
             }
         }
+
     }
 }
 

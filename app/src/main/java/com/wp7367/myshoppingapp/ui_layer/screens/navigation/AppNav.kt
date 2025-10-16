@@ -39,6 +39,7 @@ import com.wp7367.myshoppingapp.ui_layer.screens.auth.SignUpScreen
 import com.wp7367.myshoppingapp.ui_layer.screens.homeScreenPage.CartPage
 import com.wp7367.myshoppingapp.ui_layer.screens.homeScreenPage.FavoritePage
 import com.wp7367.myshoppingapp.ui_layer.screens.homeScreenPage.ProfilePage
+import com.wp7367.myshoppingapp.ui_layer.screens.others.AddressScreen
 import com.wp7367.myshoppingapp.ui_layer.screens.others.OrderScreen
 import com.wp7367.myshoppingapp.ui_layer.viewModel.OrderViewModel
 
@@ -183,6 +184,13 @@ fun AppNav(firebaseAuth: FirebaseAuth){
                 {
                     OrderScreen(navController = navController, orderViewmodel = hiltViewModel())
                 }
+
+                composable <Routes.AddressScreen>
+                {
+                    AddressScreen(navController = navController)
+                }
+
+
 
 
             }
