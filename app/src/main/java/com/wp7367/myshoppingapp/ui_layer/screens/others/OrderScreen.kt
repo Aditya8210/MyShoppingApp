@@ -42,6 +42,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -51,6 +52,7 @@ import com.wp7367.myshoppingapp.ui_layer.viewModel.OrderViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
 
 @Composable
 fun OrderScreen(navController: NavController, orderViewmodel: OrderViewModel) {
@@ -118,29 +120,29 @@ fun OrderScreen(navController: NavController, orderViewmodel: OrderViewModel) {
                     }
                 }
 
-                getAllOrderState.value.data != null -> {
-                    val orderList = getAllOrderState.value.data
-                    if (orderList!!.isNotEmpty()) {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            items(orderList) { order ->
-                                OrderView(orderModel = order)
-                            }
-                        }
-                        Log.d("@order", "OrderScreen: ")
-                    } else {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(text = "No orders found.")
-                        }
-                    }
-                }
-
                 getAllOrderState.value.error.isNotEmpty() -> {
                     Toast.makeText(context, getAllOrderState.value.error, Toast.LENGTH_SHORT).show()
+                }
+
+                !getAllOrderState.value.data.isNullOrEmpty() -> {
+                    val orderList = getAllOrderState.value.data!!
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(orderList) { order ->
+                            OrderView(orderModel = order)
+                        }
+                    }
+
+                }
+
+                else -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(text = "No orders found.")
+                    }
                 }
             }
         }

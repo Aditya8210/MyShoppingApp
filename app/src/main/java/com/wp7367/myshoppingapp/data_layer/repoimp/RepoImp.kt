@@ -4,6 +4,7 @@ package com.wp7367.myshoppingapp.data_layer.repoimp
 import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.messaging.FirebaseMessaging
 
 import com.wp7367.myshoppingapp.common.CART
 import com.wp7367.myshoppingapp.common.CATEGORY
@@ -89,13 +90,19 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
         trySend(ResultState.Loading)
 
         FirebaseAuth.createUserWithEmailAndPassword(userData.email,userData.password).addOnSuccessListener {
-            FirebaseFirestore.collection(USERS).document(it.user?.uid.toString()).set(userData).addOnSuccessListener {
-
+            FirebaseFirestore.collection(USERS).document(it.user?.uid.toString()).set(userData)
+            .addOnSuccessListener {
                 trySend(ResultState.Success("User Register Successfully"))
             }.addOnFailureListener {
                 trySend(ResultState.Error(it.message.toString()))
 
             }
+
+            updateFcmToken(FirebaseAuth.currentUser?.uid.toString())
+
+
+        }.addOnFailureListener {
+            trySend(ResultState.Error(it.message.toString()))
         }
         awaitClose {
             close()
@@ -103,13 +110,18 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
 
     }
 
+    //~ Login User With Email And Password ~
     override suspend fun loginWithEmailAndPassword(email: String, password: String): Flow<ResultState<String>> = callbackFlow {
         trySend(ResultState.Loading)
         FirebaseAuth.signInWithEmailAndPassword(email,password).addOnSuccessListener {
             trySend(ResultState.Success("User Login Successfully"))
+
+            updateFcmToken(FirebaseAuth.currentUser?.uid.toString())
+
         }.addOnFailureListener {
             trySend(ResultState.Error(it.message.toString()))
         }
+
         awaitClose {
             close()
         }
@@ -142,7 +154,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
     }
 
 
-
+    //~ Update User Data ~
     override suspend fun updateUserData(userData: userData): Flow<ResultState<String>> = callbackFlow {
 
         trySend(ResultState.Loading)
@@ -327,6 +339,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
         }
     }
 
+    // ~ GetFavItem ~
     override suspend fun getFavItem(): Flow<ResultState<List<favouriteModel>>>  = callbackFlow{
 
         trySend(ResultState.Loading)
@@ -356,6 +369,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
 
     }
 
+    //~ DeleteFavItem ~
     override suspend fun deleteFavItem(favouriteModel: favouriteModel): Flow<ResultState<String>>  = callbackFlow{
 
         trySend(ResultState.Loading)
@@ -383,6 +397,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
 
     }
 
+    //~ SearchFeature ~
     override suspend fun searchFeature(query: String): Flow<ResultState<List<ProductModel>>>  =callbackFlow{
 
         trySend(ResultState.Loading)
@@ -405,6 +420,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
         }
     }
 
+    //~ ShippingAddress ~
     override suspend fun shippingAddress(shippingModel: shippingModel): Flow<ResultState<String>> = callbackFlow {
 
         trySend(ResultState.Loading)
@@ -426,6 +442,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
         }
     }
 
+    //~ DeleteShippingAddress ~
     override suspend fun deleteShippingAddress(shippingModel: shippingModel): Flow<ResultState<String>>  = callbackFlow{
 
         trySend(ResultState.Loading)
@@ -446,6 +463,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
         }
     }
 
+    //~ ShowShippingAddressById ~
     override suspend fun showShippingAddressById(): Flow<ResultState<List<shippingModel>>> = callbackFlow {
 
         trySend(ResultState.Loading)
@@ -466,6 +484,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
 
     }
 
+    //~ OrderDataSave ~
     override suspend fun orderDataSave(orderList: List<orderModel>): Flow<ResultState<String>> = callbackFlow {
         trySend(ResultState.Loading)
 
@@ -495,9 +514,8 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
         }
     }
 
+    //~ GetOrderData ~
     override suspend fun getOrderData(): Flow<ResultState<List<orderModel>>> = callbackFlow {
-
-
         trySend(ResultState.Loading)
         FirebaseFirestore.collection(ORDER_DATA).document(FirebaseAuth.currentUser?.uid.toString())
             .collection(ORDER).get().addOnSuccessListener { querySnapshot ->
@@ -513,7 +531,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
                                 color = it["color"] as? String ?: "",
                                 date = it["date"] as? Long ?: 0,
                                 fullName = it["fullName"] as? String ?: "",
-                                contactNumber = it["mobileNo"] as? String ?: "",
+                                contactNumber = it["mobileNo"] as? String ?: "", // Corrected key to mobileNo
                                 productCategory = it["productCategory"] as? String ?: "",
                                 productId = it["productId"] as? String ?: "",
                                 productDescription = it["productDescription"] as? String ?: "",
@@ -524,8 +542,8 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
                                 size = it["size"] as? String ?: "",
                                 transactionId = it["transactionId"] as? String ?: "",
                                 transactionMethod = it["transactionMethod"] as? String ?: "",
-                                address = it["userAddress"] as? String ?: "",
-                                email = it["userEmail"] as? String ?: "",
+                                address = it["userAddress"] as? String ?: "", // Corrected key to userAddress
+                                email = it["userEmail"] as? String ?: "", // Corrected key to userEmail
                                 orderId = it["orderId"] as? String ?: "",
                             )
                             allOrders.add(order)
@@ -533,17 +551,35 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
                     }
                 }
                 if (allOrders.isEmpty()) {
-                    trySend(ResultState.Error("No orders found"))
+                    // It's better to send Success with an empty list,
+                    // as 'No orders found' is not a true error state.
+                    // Your UI can then handle displaying the "empty" message.
+                    trySend(ResultState.Success(emptyList()))
                 } else {
+                    // Log only if the list is not empty
+                    Log.d("@order", "First order product name: ${allOrders.first().productName}")
                     trySend(ResultState.Success(allOrders))
                 }
 
-                Log.d("@order", "getAllOrderData: ${allOrders.get(0).productName}")
             }.addOnFailureListener {
                 trySend(ResultState.Error(it.message.toString()))
             }
         awaitClose {
             close()
+        }
+    }
+
+
+
+
+    //   ~ Fcm Push Notification ~
+
+    private fun updateFcmToken(userId: String){
+        FirebaseMessaging.getInstance().token.addOnCompleteListener{
+            if (it.isSuccessful){
+                val token = it.result
+                FirebaseFirestore.collection("USER_TOKEN").document(userId).set(mapOf("token" to token))
+            }
         }
     }
 

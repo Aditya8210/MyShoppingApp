@@ -79,11 +79,6 @@ fun CheckOutScreenUi(
     val orderState = orderViewModel.orderState.collectAsStateWithLifecycle()
 
 
-
-
-
-
-
     var selectedPaymentMethod by remember { mutableStateOf("Online payment") }
     val paymentOptions = listOf("Online payment", "Cash on delivery")
 
@@ -108,8 +103,7 @@ fun CheckOutScreenUi(
 
         when {
             data.isNotEmpty() -> {
-                Toast.makeText(context, data, Toast.LENGTH_SHORT).show()
-//                navController.navigate(Routes.OrderConfirmationScreen)
+                navController.navigate(Routes.OrderSuccess)
             }
 
             error.isNotEmpty() -> {
