@@ -168,7 +168,13 @@ fun AppNav(firebaseAuth: FirebaseAuth){
                 composable<Routes.CheckOutScreen> {
 
                     val data = it.toRoute<Routes.CheckOutScreen>()
-                    CheckOutScreenUi(navController = navController, productId= data.productId)
+                    CheckOutScreenUi(
+                        navController = navController,
+                        productId = data.productId,
+                        quantity = data.quantity,
+                        size = data.size,
+                        color = data.color
+                    )
                 }
                 
                 composable <Routes.EditAddressScreen>

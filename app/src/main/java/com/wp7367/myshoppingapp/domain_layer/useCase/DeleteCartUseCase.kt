@@ -6,5 +6,5 @@ import javax.inject.Inject
 
 class DeleteCartUseCase @Inject constructor(private val repo: repo) {
 
-    suspend fun deleteCartUseCase(cartItemModel: cartItemModel) = repo.deleteCartItem(cartItemModel)
+    fun deleteCartUseCase(cartItemModel: cartItemModel) = repo.deleteCartItem(cartItemModel)
 }

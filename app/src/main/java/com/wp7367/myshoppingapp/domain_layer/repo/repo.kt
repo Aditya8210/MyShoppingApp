@@ -14,49 +14,55 @@ import kotlinx.coroutines.flow.Flow
 
 interface repo  {
 
-  suspend  fun getAllCategory(): Flow <ResultState<List<category>>>
+  fun getAllCategory(): Flow <ResultState<List<category>>>
 
 
 
 
-  suspend fun getAllProduct():Flow<ResultState<List<ProductModel>>>
+  fun getAllProduct():Flow<ResultState<List<ProductModel>>>
 
-  suspend fun registerUserWithEmailAndPassword(userData: userData): Flow<ResultState<String>>
+  fun registerUserWithEmailAndPassword(userData: userData): Flow<ResultState<String>>
 
-  suspend fun loginWithEmailAndPassword(email: String, password: String): Flow<ResultState<String>>
+  fun loginWithEmailAndPassword(email: String, password: String): Flow<ResultState<String>>
 
 
-  suspend fun getUserById(uid: String): Flow<ResultState<userData>>
+  fun getUserById(uid: String): Flow<ResultState<userData>>
 
-  suspend fun updateUserData(userData: userData): Flow<ResultState<String>>
+  fun updateUserData(userData: userData): Flow<ResultState<String>>
 
-  suspend fun getProductById(productId: String): Flow<ResultState<ProductModel>>
+  fun getProductById(productId: String): Flow<ResultState<ProductModel>>
 
-  suspend fun getBanner(): Flow<ResultState<List<String>>>
+  fun getBanner(): Flow<ResultState<List<String>>>
   
-  suspend fun setCartItem(cartItemModel: cartItemModel): Flow<ResultState<String>>
+  fun setCartItem(cartItemModel: cartItemModel): Flow<ResultState<String>>
 
-  suspend fun getCartItem(): Flow<ResultState<List<cartItemModel>>>
+  fun getCartItem(): Flow<ResultState<List<cartItemModel>>>
 
-  suspend fun deleteCartItem(cartItemModel: cartItemModel): Flow<ResultState<String>>
+  fun deleteCartItem(cartItemModel: cartItemModel): Flow<ResultState<String>>
 
-  suspend fun setFavItem(favouriteModel: favouriteModel): Flow<ResultState<String>>
+  fun setFavItem(favouriteModel: favouriteModel): Flow<ResultState<String>>
 
-  suspend fun getFavItem(): Flow<ResultState<List<favouriteModel>>>
+  fun getFavItem(): Flow<ResultState<List<favouriteModel>>>
 
-  suspend fun deleteFavItem(favouriteModel: favouriteModel): Flow<ResultState<String>>
+  fun deleteFavItem(favouriteModel: favouriteModel): Flow<ResultState<String>>
 
-  suspend fun searchFeature(query: String): Flow<ResultState<List<ProductModel>>>
+  fun searchFeature(query: String): Flow<ResultState<List<ProductModel>>>
 
-  suspend fun shippingAddress(shippingModel: shippingModel): Flow<ResultState<String>>
+  fun shippingAddress(shippingModel: shippingModel): Flow<ResultState<String>>
 
-  suspend fun deleteShippingAddress(shippingModel: shippingModel): Flow<ResultState<String>>
+  fun deleteShippingAddress(shippingModel: shippingModel): Flow<ResultState<String>>
 
-  suspend fun showShippingAddressById(): Flow<ResultState<List<shippingModel>>>
+  fun showShippingAddressById(): Flow<ResultState<List<shippingModel>>>
 
-  suspend fun orderDataSave(orderList: List<orderModel>) : Flow<ResultState<String>>
+  fun orderDataSave(orderList: List<orderModel>) : Flow<ResultState<String>>
 
-  suspend fun getOrderData(): Flow<ResultState<List<orderModel>>>
+  fun getOrderData(): Flow<ResultState<List<orderModel>>>
+
+  fun verifyPaymentOnBackend(
+      paymentId: String,
+      orderId: String,
+      signature: String
+  ): Flow<ResultState<String>>
 
 
 

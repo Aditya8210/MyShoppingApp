@@ -6,5 +6,5 @@ import javax.inject.Inject
 
 class ShippingAddressUseCase @Inject constructor(private val repo: repo) {
 
-    suspend fun shippingAddressUseCase(shippingModel: shippingModel) = repo.shippingAddress(shippingModel)
+    fun shippingAddressUseCase(shippingModel: shippingModel) = repo.shippingAddress(shippingModel)
 }

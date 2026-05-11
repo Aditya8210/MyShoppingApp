@@ -5,5 +5,5 @@ import javax.inject.Inject
 
 class GetAllOrderUseCase @Inject constructor(private val repo: repo) {
 
-    suspend fun getAllOrderUseCase() = repo.getOrderData()
+    fun getAllOrderUseCase() = repo.getOrderData()
 }

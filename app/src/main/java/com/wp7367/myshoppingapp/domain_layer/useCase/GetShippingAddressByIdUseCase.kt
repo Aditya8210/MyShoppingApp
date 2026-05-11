@@ -5,5 +5,5 @@ import javax.inject.Inject
 
 class GetShippingAddressByIdUseCase @Inject constructor(private  val repo: repo) {
 
-    suspend fun getShippingAddressByIdUseCase() = repo.showShippingAddressById()
+    fun getShippingAddressByIdUseCase() = repo.showShippingAddressById()
 }

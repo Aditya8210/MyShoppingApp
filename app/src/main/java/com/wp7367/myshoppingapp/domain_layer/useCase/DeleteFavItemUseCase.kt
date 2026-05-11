@@ -6,5 +6,5 @@ import javax.inject.Inject
 
 class DeleteFavItemUseCase @Inject constructor(private val repo: repo) {
 
-    suspend fun deleteFavItemUseCase(favouriteModel: favouriteModel) = repo.deleteFavItem(favouriteModel)
+    fun deleteFavItemUseCase(favouriteModel: favouriteModel) = repo.deleteFavItem(favouriteModel)
 }

@@ -6,7 +6,7 @@ data class orderModel(
     var productId: String = "",
     val productName: String = "",
     val productDescription: String = "",
-    val productQty: Any = "",
+    val productQty: String = "",
     val productFinalPrice: String = "",
     val productCategory: String = "",
     val productImageUrl: String = "",

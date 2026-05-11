@@ -5,5 +5,5 @@ import javax.inject.Inject
 
 class GetAllProductUseCase @Inject constructor(private val repo: repo)  {
 
-    suspend   fun getAllProductUseCase() = repo.getAllProduct()
+    fun getAllProductUseCase() = repo.getAllProduct()
 }

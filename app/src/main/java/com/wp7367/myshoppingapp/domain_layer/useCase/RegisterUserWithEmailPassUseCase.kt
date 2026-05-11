@@ -6,7 +6,7 @@ import javax.inject.Inject
 
 class RegisterUserWithEmailPassUseCase @Inject constructor(private val repo: repo){
 
-  suspend  fun registerUserWithEmailPassUseCase(userData: userData) = repo.registerUserWithEmailAndPassword(userData)
+    fun registerUserWithEmailPassUseCase(userData: userData) = repo.registerUserWithEmailAndPassword(userData)
 
 
 }

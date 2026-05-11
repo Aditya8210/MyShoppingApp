@@ -5,5 +5,5 @@ import javax.inject.Inject
 
 class GetProductBySearchUseCase @Inject constructor(private val repo: repo) {
 
-    suspend fun getProductBySearchUseCase(query: String) = repo.searchFeature(query)
+    fun getProductBySearchUseCase(query: String) = repo.searchFeature(query)
 }

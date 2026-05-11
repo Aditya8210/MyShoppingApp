@@ -10,18 +10,24 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import com.google.firebase.auth.FirebaseAuth
+import androidx.activity.viewModels
 import com.razorpay.Checkout
-import com.razorpay.PaymentResultListener
+import com.razorpay.PaymentData
+import com.razorpay.PaymentResultWithDataListener
 import com.wp7367.myshoppingapp.ui.theme.MyShoppingAppTheme
 import com.wp7367.myshoppingapp.ui_layer.screens.navigation.AppNav
+import com.wp7367.myshoppingapp.ui_layer.viewModel.OrderViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import org.json.JSONObject
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity(), PaymentResultListener{                   // Step - 3
+class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
     @Inject
     lateinit var firebaseAuth: FirebaseAuth
+
+    private val orderViewModel: OrderViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -33,72 +39,60 @@ class MainActivity : ComponentActivity(), PaymentResultListener{                
             }
         }
 
-
-        // Step - 4
-
         Checkout.preload(applicationContext)
-        val co = Checkout()
-        // apart from setting it in AndroidManifest.xml, keyId can also be set
-        // programmatically during runtime
-        co.setKeyID("rzp_live_XXXXXXXXXXXXXX")
-
-
-
     }
 
-
-
-        // Step - 5 and Remove the Private Key , and give parameters to startPayment
-
-   fun startPayment(
-
-       amount: Int,
-       name : String,
-
-   ) {
-        /*
-        *  You need to pass the current activity to let Razorpay create CheckoutActivity
-        * */
-        val activity: Activity = this
+    fun startPayment(
+        amount: Int,
+        name: String,
+        email: String,
+        contact: String,
+        description: String = "Purchase from MyShoppingApp"
+    ) {
         val co = Checkout()
+        // The key is ideally picked from the Manifest, but you can set it here if needed.
+        // co.setKeyID("YOUR_RAZORPAY_KEY")
 
         try {
             val options = JSONObject()
-            options.put("name",name)
-            options.put("description","Demoing Charges")
-            //You can omit the image option to fetch the image from the Dashboard
-            options.put("image","http://example.com/image/rzp.jpg")
-            options.put("theme.color", "#3399cc");
-            options.put("currency","INR");
-            options.put("order_id", "order_DBJOWzybf0sJbb");
-            options.put("amount",amount)//pass amount in currency subunits
+            options.put("name", name)
+            options.put("description", description)
+            options.put("image", "https://s3.amazonaws.com/rzp-mobile/images/rzp.png") // Razorpay logo or your app logo
+            options.put("theme.color", "#3399cc")
+            options.put("currency", "INR")
+            options.put("amount", amount) // amount in paise
 
-            val retryObj =  JSONObject();
-            retryObj.put("enabled", true);
-            retryObj.put("max_count", 4);
-            options.put("retry", retryObj);
+            val retryObj = JSONObject()
+            retryObj.put("enabled", true)
+            retryObj.put("max_count", 4)
+            options.put("retry", retryObj)
 
             val prefill = JSONObject()
-            prefill.put("email","<email>")
-            prefill.put("contact","<phone>")
+            prefill.put("email", email)
+            prefill.put("contact", contact)
 
-            options.put("prefill",prefill)
-            co.open(activity,options)
-        }catch (e: Exception){
-            Toast.makeText(activity,"Error in payment: "+ e.message,Toast.LENGTH_LONG).show()
+            options.put("prefill", prefill)
+            co.open(this, options)
+        } catch (e: Exception) {
+            Toast.makeText(this, "Error in payment: " + e.message, Toast.LENGTH_LONG).show()
             e.printStackTrace()
         }
     }
 
-
-    override fun onPaymentSuccess(p0: String?) {
-        TODO("Not yet implemented")
+    override fun onPaymentSuccess(razorpayPaymentId: String?, paymentData: PaymentData?) {
+        Log.d("PaymentSuccess", "Payment ID: $razorpayPaymentId")
+        // Pass PaymentData which contains paymentId, orderId, and signature
+        orderViewModel.setPaymentState(
+            paymentId = razorpayPaymentId ?: "Success",
+            signature = paymentData?.signature ?: "",
+            razorpayOrderId = paymentData?.orderId ?: ""
+        )
     }
 
-    override fun onPaymentError(errorCode: Int, description: String?) {
-        Toast.makeText(this, "We appreciate your patience. While we fix this, continue browsing on the app.", Toast.LENGTH_LONG).show()
-        // You might want to log the error code and description for debugging
-         Log.e("PaymentError", "Code: $errorCode Description: $description")
+    override fun onPaymentError(errorCode: Int, description: String?, paymentData: PaymentData?) {
+        Log.e("PaymentError", "Code: $errorCode Description: $description")
+        orderViewModel.setPaymentState(errorMsg = description ?: "Payment Failed")
+        Toast.makeText(this, "Payment Failed: $description", Toast.LENGTH_LONG).show()
     }
 }
 

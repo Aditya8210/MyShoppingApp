@@ -6,5 +6,5 @@ import javax.inject.Inject
 
 class OrderDetailUseCase @Inject constructor(private val repo: repo) {
 
-    suspend fun orderDetailUseCase(orderList: List<orderModel>)=repo.orderDataSave(orderList)
+    fun orderDetailUseCase(orderList: List<orderModel>)=repo.orderDataSave(orderList)
 }
