@@ -119,7 +119,6 @@ fun CheckOutScreenUi(
     var selectedPaymentMethod by remember { mutableStateOf("Online payment") }
     val paymentOptions = listOf("Online payment", "Cash on delivery")
 
-    val scrollState = rememberScrollState()
 
     LaunchedEffect(productId) {
         if (productId != null) {
@@ -213,6 +212,8 @@ fun CheckOutScreenUi(
             }
         }
     }
+
+    val scrollState = rememberScrollState()
 
     LaunchedEffect(createOrderState) {
         if (createOrderState.orderId.isNotEmpty()) {

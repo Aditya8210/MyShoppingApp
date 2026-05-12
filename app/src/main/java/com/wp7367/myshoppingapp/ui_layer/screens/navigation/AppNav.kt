@@ -1,32 +1,33 @@
 package com.wp7367.myshoppingapp.ui_layer.screens.navigation
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.PersonOutline
+import androidx.compose.material.icons.outlined.ShoppingCart
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.navigation
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.compose.*
 import androidx.navigation.toRoute
 import com.google.firebase.auth.FirebaseAuth
 import com.wp7367.myshoppingapp.ui_layer.screens.others.CheckOutScreenUi
@@ -41,132 +42,132 @@ import com.wp7367.myshoppingapp.ui_layer.screens.homeScreenPage.CartPage
 import com.wp7367.myshoppingapp.ui_layer.screens.homeScreenPage.FavoritePage
 import com.wp7367.myshoppingapp.ui_layer.screens.homeScreenPage.ProfilePage
 import com.wp7367.myshoppingapp.ui_layer.screens.others.AddressScreen
+import com.wp7367.myshoppingapp.ui_layer.screens.others.NotificationScreen
 import com.wp7367.myshoppingapp.ui_layer.screens.others.OrderScreen
-import com.wp7367.myshoppingapp.ui_layer.viewModel.OrderViewModel
-
+import com.wp7367.myshoppingapp.ui_layer.screens.others.SeeAllCategoryScreen
 
 @Composable
-fun AppNav(firebaseAuth: FirebaseAuth){
-
+fun AppNav(firebaseAuth: FirebaseAuth) {
     val navController = rememberNavController()
 
-
-
-//---------------------Step 2 ~ BottomNavBar ~ ------------------------------------------------------------------------
-
-    // Get the current back stack entry reactively
     val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
 
-    // Get the current route from the back stack entry
-    val currentRoute = navBackStackEntry?.destination?.route
-
-    val navItemList = listOf(
-        NavItemList("Home",Icons.Default.Home),
-        NavItemList("Favorite",Icons.Default.Favorite),
-        NavItemList("Cart",Icons.Default.ShoppingCart),
-        NavItemList("Profile",Icons.Default.AccountBox)
+    val bottomNavItems = listOf(
+        BottomNavItem.Home,
+        BottomNavItem.Favorite,
+        BottomNavItem.Cart,
+        BottomNavItem.Profile
     )
 
-    var selectedIndex by remember { mutableIntStateOf(0) }
-
-    // Derive shouldShowBottomBar directly from the currentRoute
-    // This will automatically update when currentRoute changes
-    val shouldShowBottomBar by remember(currentRoute) {
-        derivedStateOf {
-            when (currentRoute) {
-                Routes.LogInScreen::class.qualifiedName, Routes.SignUpScreen::class.qualifiedName -> false
-                else -> true
-            }
-        }
+    val shouldShowBottomBar = remember(navBackStackEntry) {
+        val currentRoute = navBackStackEntry?.destination?.route ?: ""
+        !currentRoute.contains("LogInScreen") && !currentRoute.contains("SignUpScreen")
     }
-//--------------------------------------------------------------------------------------------------
 
-
-
-    val startScreen = if (firebaseAuth.currentUser == null){
+    val startScreen = if (firebaseAuth.currentUser == null) {
         SubNavigation.LogInSignUpScreen
-    }
-    else{
+    } else {
         SubNavigation.MainHomeScreen
     }
 
-
-//-----------------------Step 3 ~ BottomNavBar ~ -----------------------------------------------
-    Scaffold (
+    Scaffold(
+        contentWindowInsets = WindowInsets(0.dp),
         bottomBar = {
-            // Use shouldShowBottomBar directly (no .value needed because of 'by' delegate)
             if (shouldShowBottomBar) {
-            NavigationBar {
-                navItemList.forEachIndexed { index, navItem ->
+                NavigationBar(
+                    containerColor = Color.White,
+                    tonalElevation = 0.dp,
+                    windowInsets = WindowInsets(0.dp),
+                    modifier = Modifier
+                        .navigationBarsPadding()
+                        .height(64.dp)
+                        .border(
+                            width = 0.5.dp,
+                            color = Color.LightGray.copy(alpha = 0.3f),
+                            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
+                        )
+                ) {
+                    bottomNavItems.forEach { item ->
+                        val isSelected = currentDestination?.hierarchy?.any { 
+                            it.hasRoute(item.route::class) 
+                        } == true
 
-                    NavigationBarItem(
-                        selected = selectedIndex == index,
-                        onClick = {
-                            selectedIndex = index
-
-                            when (selectedIndex) {
-                                0 -> navController.navigate(Routes.HomeScreen)
-                                1 -> navController.navigate(Routes.FavoriteScreen)
-                                2 -> navController.navigate(Routes.CartScreen)
-                                3 -> navController.navigate(Routes.ProfileScreen)
-                            }
-                        },
-                        label = { Text(navItem.label) },
-                        icon = {
-                            Icon(navItem.icon, contentDescription = navItem.label)
-                        }
-                    )
+                        NavigationBarItem(
+                            selected = isSelected,
+                            onClick = {
+                                navController.navigate(item.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            label = { 
+                                Text(
+                                    text = item.label,
+                                    fontSize = 10.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray
+                                )
+                            },
+                            icon = {
+                                Icon(
+                                    imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
+                                    contentDescription = item.label,
+                                    modifier = Modifier.size(22.dp),
+                                    tint = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray
+                                )
+                            },
+                            alwaysShowLabel = true,
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                unselectedIconColor = Color.Gray,
+                                indicatorColor = Color.Transparent
+                            )
+                        )
+                    }
                 }
             }
         }
-        }
-
-        //---------------------Step 4 ~ BottomNavBar ~ ---------------------------------------------
-    ){
-
-        innerPadding ->
-        Box(modifier = Modifier.padding(
-                // Use shouldShowBottomBar directly
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier.padding(
                 bottom = if (shouldShowBottomBar) innerPadding.calculateBottomPadding() else 0.dp
             )
-        )
-        {
-            NavHost(navController = navController, startDestination = startScreen)
-            {
-
-                navigation<SubNavigation.LogInSignUpScreen>(startDestination = Routes.LogInScreen){
-                    composable<Routes.LogInScreen>{
-                        LoginScreen(navController= navController)
+        ) {
+            NavHost(navController = navController, startDestination = startScreen) {
+                navigation<SubNavigation.LogInSignUpScreen>(startDestination = Routes.LogInScreen) {
+                    composable<Routes.LogInScreen> {
+                        LoginScreen(navController = navController)
                     }
-                    composable<Routes.SignUpScreen>{
-                        SignUpScreen(navController= navController)
+                    composable<Routes.SignUpScreen> {
+                        SignUpScreen(navController = navController)
                     }
                 }
 
-                navigation<SubNavigation.MainHomeScreen>(startDestination = Routes.HomeScreen){
-                    composable<Routes.HomeScreen>{
-                        HomeScreenUi(navController=navController)
+                navigation<SubNavigation.MainHomeScreen>(startDestination = Routes.HomeScreen) {
+                    composable<Routes.HomeScreen> {
+                        HomeScreenUi(navController = navController)
                     }
-                    composable <Routes.FavoriteScreen>{
+                    composable<Routes.FavoriteScreen> {
                         FavoritePage(navController = navController)
                     }
-                    composable <Routes.CartScreen> {
+                    composable<Routes.CartScreen> {
                         CartPage(navController = navController)
                     }
-                    composable <Routes.ProfileScreen>{
+                    composable<Routes.ProfileScreen> {
                         ProfilePage(navController = navController, firebaseAuth = firebaseAuth)
                     }
                 }
 
                 composable<Routes.EachProductDetailScreen> {
-
                     val data = it.toRoute<Routes.EachProductDetailScreen>()
-                    EachProductDetailScreen(navController = navController, productId= data.productId)
+                    EachProductDetailScreen(navController = navController, productId = data.productId)
                 }
 
-
                 composable<Routes.CheckOutScreen> {
-
                     val data = it.toRoute<Routes.CheckOutScreen>()
                     CheckOutScreenUi(
                         navController = navController,
@@ -176,25 +177,25 @@ fun AppNav(firebaseAuth: FirebaseAuth){
                         color = data.color
                     )
                 }
-                
-                composable <Routes.EditAddressScreen>
-                {
+
+                composable<Routes.EditAddressScreen> {
                     val data = it.toRoute<Routes.EditAddressScreen>()
                     EditAddressScreen(navController = navController, addressId = data.addressId)
                 }
 
-                composable <Routes.SeeAllProduct>
-                {
+                composable<Routes.SeeAllProduct> {
                     SeeAllProductUi(navController = navController)
                 }
 
-                composable <Routes.OrderHistoryScreen>
-                {
+                composable<Routes.SeeAllCategories> {
+                    SeeAllCategoryScreen(navController = navController)
+                }
+
+                composable<Routes.OrderHistoryScreen> {
                     OrderScreen(navController = navController, orderViewmodel = hiltViewModel())
                 }
 
-                composable <Routes.AddressScreen>
-                {
+                composable<Routes.AddressScreen> {
                     AddressScreen(navController = navController)
                 }
 
@@ -202,17 +203,22 @@ fun AppNav(firebaseAuth: FirebaseAuth){
                     OrderSuccess(navController = navController)
                 }
 
-
+                composable<Routes.NotificationScreen> {
+                    NotificationScreen(navController = navController)
+                }
             }
         }
     }
 }
 
-
-
-//------------------ Step 1 ~ Data class for BottomNavBar ~ ----------------------------------
-
-data class NavItemList(
+sealed class BottomNavItem(
+    val route: Any,
     val label: String,
-    val icon: ImageVector,
-)
+    val selectedIcon: ImageVector,
+    val unselectedIcon: ImageVector
+) {
+    object Home : BottomNavItem(Routes.HomeScreen, "Home", Icons.Filled.Home, Icons.Outlined.Home)
+    object Favorite : BottomNavItem(Routes.FavoriteScreen, "Wishlist", Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder)
+    object Cart : BottomNavItem(Routes.CartScreen, "Cart", Icons.Filled.ShoppingCart, Icons.Outlined.ShoppingCart)
+    object Profile : BottomNavItem(Routes.ProfileScreen, "Profile", Icons.Filled.Person, Icons.Outlined.PersonOutline)
+}
