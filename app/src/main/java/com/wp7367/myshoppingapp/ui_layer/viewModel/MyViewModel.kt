@@ -3,68 +3,39 @@ package com.wp7367.myshoppingapp.ui_layer.viewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wp7367.myshoppingapp.common.ResultState
-import com.wp7367.myshoppingapp.domain_layer.useCase.DeleteCartUseCase
-import com.wp7367.myshoppingapp.domain_layer.useCase.DeleteFavItemUseCase
-import com.wp7367.myshoppingapp.domain_layer.useCase.GetAllCategoryUseCase
-import com.wp7367.myshoppingapp.domain_layer.useCase.GetAllProductUseCase
-import com.wp7367.myshoppingapp.domain_layer.useCase.GetBannerUseCase
-import com.wp7367.myshoppingapp.domain_layer.useCase.GetCartItemUseCase
-import com.wp7367.myshoppingapp.domain_layer.useCase.GetFavItemUseCase
-import com.wp7367.myshoppingapp.domain_layer.useCase.GetProductByIdUseCase
-import com.wp7367.myshoppingapp.domain_layer.useCase.GetProductBySearchUseCase
-import com.wp7367.myshoppingapp.domain_layer.useCase.GetUserByIdUseCase
-import com.wp7367.myshoppingapp.domain_layer.useCase.LoginUserWithEmailPassUseCase
-import com.wp7367.myshoppingapp.domain_layer.useCase.RegisterUserWithEmailPassUseCase
-import com.wp7367.myshoppingapp.domain_layer.useCase.SetCartItemUseCase
-import com.wp7367.myshoppingapp.domain_layer.useCase.SetFavItemUseCase
-import com.wp7367.myshoppingapp.domain_layer.useCase.UpdateUserByIdUseCase
-
-import com.wp7367.myshoppingapp.domain_layer.models.category
-import com.wp7367.myshoppingapp.domain_layer.models.ProductModel
-import com.wp7367.myshoppingapp.domain_layer.models.cartItemModel
-import com.wp7367.myshoppingapp.domain_layer.models.favouriteModel
-import com.wp7367.myshoppingapp.domain_layer.models.userData
+import com.wp7367.myshoppingapp.domain_layer.useCase.*
+import com.wp7367.myshoppingapp.domain_layer.models.*
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategoryUseCase,
-                                      private val GetAllProduct: GetAllProductUseCase,
-                                      private val RegisterUser: RegisterUserWithEmailPassUseCase,
-                                      private val LoginUser: LoginUserWithEmailPassUseCase,
-                                      private val GetUserData: GetUserByIdUseCase,
-                                      private val UpdateUser: UpdateUserByIdUseCase,
-                                      private val GetProductById: GetProductByIdUseCase,
-                                      private val GetBanner: GetBannerUseCase,
-                                      private val SetCartItem: SetCartItemUseCase,
-                                      private val GetCartItem: GetCartItemUseCase,
-                                      private val DeleteCart: DeleteCartUseCase,
-                                      private val SetFavItem: SetFavItemUseCase,
-                                      private val GetFavItem: GetFavItemUseCase,
-                                      private val DeleteFav: DeleteFavItemUseCase,
-                                      private val SearchProduct: GetProductBySearchUseCase,
-
-
-
-                                      ) : ViewModel() {
-
-
-    //   ~ Here State is Create ~
+class MyViewModel @Inject constructor(
+    private val GetAllCategory: GetAllCategoryUseCase,
+    private val GetAllProduct: GetAllProductUseCase,
+    private val RegisterUser: RegisterUserWithEmailPassUseCase,
+    private val LoginUser: LoginUserWithEmailPassUseCase,
+    private val GetUserData: GetUserByIdUseCase,
+    private val UpdateUser: UpdateUserByIdUseCase,
+    private val GetProductById: GetProductByIdUseCase,
+    private val GetBanner: GetBannerUseCase,
+    private val SetCartItem: SetCartItemUseCase,
+    private val GetCartItem: GetCartItemUseCase,
+    private val DeleteCart: DeleteCartUseCase,
+    private val SetFavItem: SetFavItemUseCase,
+    private val GetFavItem: GetFavItemUseCase,
+    private val DeleteFav: DeleteFavItemUseCase,
+    private val SearchProduct: GetProductBySearchUseCase,
+    private val GetNotifications: GetNotificationsUseCase,
+    private val DeleteNotification: DeleteNotificationUseCase
+) : ViewModel() {
 
     private val _getAllCategorySt = MutableStateFlow(getCategoryState())
     val getAllCategory = _getAllCategorySt.asStateFlow()
 
-
     private val _getAllProductSt = MutableStateFlow(getProductsState())
     val getAllProduct = _getAllProductSt.asStateFlow()
-
 
     private val _registerUserSt = MutableStateFlow(RegisterState())
     val registerUser = _registerUserSt.asStateFlow()
@@ -105,36 +76,30 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
     private val _searchProductSt = MutableStateFlow(SearchProductState())
     val searchProduct = _searchProductSt.asStateFlow()
 
+    private val _getNotificationsSt = MutableStateFlow(GetNotificationsState())
+    val getNotifications = _getNotificationsSt.asStateFlow()
 
+    private val _deleteNotificationSt = MutableStateFlow(DeleteNotificationState())
+    val deleteNotificationState = _deleteNotificationSt.asStateFlow()
+
+    val _searchQuery = MutableStateFlow("")
 
     init {
         getAllCategory()
         getAllProduct()
-        // getUserData("uid") // Usually uid is fetched after login
         getBanner()
         getCartItem()
         getFavItem()
-
-
+        getNotifications()
+        searchQuery()
     }
-
-
-//          ~ Here All Function and UseCase is Called ~
 
     fun getAllProduct() {
         GetAllProduct.getAllProductUseCase().onEach {
             when (it) {
-                is ResultState.Loading -> {
-                    _getAllProductSt.value = getProductsState(isLoading = true)
-                }
-
-                is ResultState.Success -> {
-                    _getAllProductSt.value = getProductsState(data = it.data)
-                }
-
-                is ResultState.Error -> {
-                    _getAllProductSt.value = getProductsState(error = it.exception)
-                }
+                is ResultState.Loading -> _getAllProductSt.value = getProductsState(isLoading = true)
+                is ResultState.Success -> _getAllProductSt.value = getProductsState(data = it.data)
+                is ResultState.Error -> _getAllProductSt.value = getProductsState(error = it.exception)
             }
         }.launchIn(viewModelScope)
     }
@@ -142,74 +107,39 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
     fun getAllCategory() {
         GetAllCategory.getAllCategoryUseCase().onEach {
             when (it) {
-                is ResultState.Loading -> {
-                    _getAllCategorySt.value = getCategoryState(isLoading = true)
-                }
-
-                is ResultState.Success -> {
-                    _getAllCategorySt.value = getCategoryState(data = it.data)
-                }
-
-                is ResultState.Error -> {
-                    _getAllCategorySt.value = getCategoryState(error = it.exception)
-                }
+                is ResultState.Loading -> _getAllCategorySt.value = getCategoryState(isLoading = true)
+                is ResultState.Success -> _getAllCategorySt.value = getCategoryState(data = it.data)
+                is ResultState.Error -> _getAllCategorySt.value = getCategoryState(error = it.exception)
             }
         }.launchIn(viewModelScope)
     }
 
-    fun getBanner(){
+    fun getBanner() {
         GetBanner.getBannerUseCase().onEach {
-            when(it){
-                is ResultState.Loading -> {
-                    _getBannerSt.value = GetBannerState(isLoading = true)
-                }
-                is ResultState.Success -> {
-                    _getBannerSt.value = GetBannerState(data = it.data)
-                }
-                is ResultState.Error -> {
-                    _getBannerSt.value = GetBannerState(error = it.exception)
-
-                }
+            when(it) {
+                is ResultState.Loading -> _getBannerSt.value = GetBannerState(isLoading = true)
+                is ResultState.Success -> _getBannerSt.value = GetBannerState(data = it.data)
+                is ResultState.Error -> _getBannerSt.value = GetBannerState(error = it.exception)
             }
         }.launchIn(viewModelScope)
     }
-
 
     fun registerUser(userData: userData) {
         RegisterUser.registerUserWithEmailPassUseCase(userData).onEach {
             when (it) {
-                is ResultState.Loading -> {
-                    _registerUserSt.value = RegisterState(isLoading = true)
-                }
-
-                is ResultState.Success -> {
-                    _registerUserSt.value = RegisterState(data = it.data)
-                }
-
-                is ResultState.Error -> {
-                    _registerUserSt.value = RegisterState(error = it.exception)
-                }
-
+                is ResultState.Loading -> _registerUserSt.value = RegisterState(isLoading = true)
+                is ResultState.Success -> _registerUserSt.value = RegisterState(data = it.data)
+                is ResultState.Error -> _registerUserSt.value = RegisterState(error = it.exception)
             }
         }.launchIn(viewModelScope)
     }
 
-
     fun loginUser(email: String, password: String) {
         LoginUser.loginUserWithEmailPassUseCase(email, password).onEach {
             when (it) {
-                is ResultState.Loading -> {
-                    _loginUserSt.value = LoginState(isLoading = true)
-                }
-
-                is ResultState.Success -> {
-                    _loginUserSt.value = LoginState(data = it.data)
-                }
-
-                is ResultState.Error -> {
-                    _loginUserSt.value = LoginState(error = it.exception)
-                }
-
+                is ResultState.Loading -> _loginUserSt.value = LoginState(isLoading = true)
+                is ResultState.Success -> _loginUserSt.value = LoginState(data = it.data)
+                is ResultState.Error -> _loginUserSt.value = LoginState(error = it.exception)
             }
         }.launchIn(viewModelScope)
     }
@@ -217,35 +147,19 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
     fun getUserData(uid: String) {
         GetUserData.getUserByIdUseCase(uid).onEach {
             when (it) {
-                is ResultState.Loading -> {
-                    _getUserDataSt.value = GetUserDataState(isLoading = true)
-                }
-
-                is ResultState.Success -> {
-                    _getUserDataSt.value = GetUserDataState(data = it.data)
-                }
-
-                is ResultState.Error -> {
-                    _getUserDataSt.value = GetUserDataState(error = it.exception)
-                }
+                is ResultState.Loading -> _getUserDataSt.value = GetUserDataState(isLoading = true)
+                is ResultState.Success -> _getUserDataSt.value = GetUserDataState(data = it.data)
+                is ResultState.Error -> _getUserDataSt.value = GetUserDataState(error = it.exception)
             }
         }.launchIn(viewModelScope)
     }
 
-
     fun updateUser(userData: userData) {
         UpdateUser.updateUserByIdUseCase(userData).onEach {
-            when(it){
-                is ResultState.Loading -> {
-                    _updateDataSt.value = UpdateDataState(isLoading = true)
-                }
-                is ResultState.Success -> {
-                    _updateDataSt.value = UpdateDataState(data = it.data)
-                }
-                is ResultState.Error -> {
-                    _updateDataSt.value = UpdateDataState(error = it.exception)
-                }
-
+            when(it) {
+                is ResultState.Loading -> _updateDataSt.value = UpdateDataState(isLoading = true)
+                is ResultState.Success -> _updateDataSt.value = UpdateDataState(data = it.data)
+                is ResultState.Error -> _updateDataSt.value = UpdateDataState(error = it.exception)
             }
         }.launchIn(viewModelScope)
     }
@@ -253,15 +167,9 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
     fun getProductById(productId: String) {
         GetProductById.getProductByIdUseCase(productId).onEach {
             when (it) {
-                is ResultState.Loading -> {
-                    _getProductByIdSt.value  = GetProductByIdState(isLoading = true)
-                }
-                is ResultState.Success -> {
-                    _getProductByIdSt.value = GetProductByIdState(data = it.data)
-                }
-                is ResultState.Error -> {
-                    _getProductByIdSt.value = GetProductByIdState(error = it.exception)
-                }
+                is ResultState.Loading -> _getProductByIdSt.value = GetProductByIdState(isLoading = true)
+                is ResultState.Success -> _getProductByIdSt.value = GetProductByIdState(data = it.data)
+                is ResultState.Error -> _getProductByIdSt.value = GetProductByIdState(error = it.exception)
             }
         }.launchIn(viewModelScope)
     }
@@ -269,258 +177,124 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
     fun setCartItem(cartItemModel: cartItemModel) {
         SetCartItem.setCartItemUseCase(cartItemModel).onEach {
             when (it) {
-                is ResultState.Loading -> {
-                    _setCartItemSt.value = SetCartItemState(isLoading = true)
-                }
-
-                is ResultState.Success -> {
-                    _setCartItemSt.value = SetCartItemState(data = it.data)
-                }
-
-                is ResultState.Error -> {
-                    _setCartItemSt.value = SetCartItemState(error = it.exception)
-                }
-
+                is ResultState.Loading -> _setCartItemSt.value = SetCartItemState(isLoading = true)
+                is ResultState.Success -> _setCartItemSt.value = SetCartItemState(data = it.data)
+                is ResultState.Error -> _setCartItemSt.value = SetCartItemState(error = it.exception)
             }
         }.launchIn(viewModelScope)
     }
 
-    fun getCartItem(){
+    fun getCartItem() {
         GetCartItem.getCartItemUseCase().onEach {
             when(it) {
-                is ResultState.Loading -> {
-                    _getCartItemSt.value = GetCartItemState(isLoading = true)
-                }
-
-                is ResultState.Success -> {
-                    _getCartItemSt.value = GetCartItemState(data = it.data)
-                }
-
-                is ResultState.Error -> {
-                    _getCartItemSt.value = GetCartItemState(error = it.exception)
-                }
+                is ResultState.Loading -> _getCartItemSt.value = GetCartItemState(isLoading = true)
+                is ResultState.Success -> _getCartItemSt.value = GetCartItemState(data = it.data)
+                is ResultState.Error -> _getCartItemSt.value = GetCartItemState(error = it.exception)
             }
         }.launchIn(viewModelScope)
     }
 
-
-    fun deleteCartItem(cartItemModel: cartItemModel){
+    fun deleteCartItem(cartItemModel: cartItemModel) {
         DeleteCart.deleteCartUseCase(cartItemModel).onEach {
-
-            when(it){
-                is ResultState.Loading -> {
-                    _deleteCartSt.value = DeleteCartState(isLoading = true)
-                }
-                is ResultState.Success -> {
-                    _deleteCartSt.value = DeleteCartState(data = it.data)
-                }
-                is ResultState.Error -> {
-                    _deleteCartSt.value = DeleteCartState(error = it.exception)
-
-                }
+            when(it) {
+                is ResultState.Loading -> _deleteCartSt.value = DeleteCartState(isLoading = true)
+                is ResultState.Success -> _deleteCartSt.value = DeleteCartState(data = it.data)
+                is ResultState.Error -> _deleteCartSt.value = DeleteCartState(error = it.exception)
             }
         }.launchIn(viewModelScope)
     }
 
-    fun setFavItem(favouriteModel: favouriteModel){
+    fun setFavItem(favouriteModel: favouriteModel) {
         SetFavItem.setFavItemUseCase(favouriteModel).onEach {
             when (it) {
-                is ResultState.Loading -> {
-                    _setFavItemSt.value = SetFavItemState(isLoading = true)
-                }
-
-                is ResultState.Success -> {
-                    _setFavItemSt.value = SetFavItemState(data = it.data)
-                }
-
-                is ResultState.Error -> {
-                    _setFavItemSt.value = SetFavItemState(error = it.exception)
-                }
+                is ResultState.Loading -> _setFavItemSt.value = SetFavItemState(isLoading = true)
+                is ResultState.Success -> _setFavItemSt.value = SetFavItemState(data = it.data)
+                is ResultState.Error -> _setFavItemSt.value = SetFavItemState(error = it.exception)
             }
         }.launchIn(viewModelScope)
     }
 
-    fun getFavItem(){
+    fun getFavItem() {
         GetFavItem.getFavItemUseCase().onEach {
             when (it) {
-                is ResultState.Loading -> {
-                    _getFavItemSt.value = GetFavItemState(isLoading = true)
-                }
-
-                is ResultState.Success -> {
-                    _getFavItemSt.value = GetFavItemState(data = it.data)
-                }
-
-                is ResultState.Error -> {
-                    _getFavItemSt.value = GetFavItemState(error = it.exception)
-
-                }
+                is ResultState.Loading -> _getFavItemSt.value = GetFavItemState(isLoading = true)
+                is ResultState.Success -> _getFavItemSt.value = GetFavItemState(data = it.data)
+                is ResultState.Error -> _getFavItemSt.value = GetFavItemState(error = it.exception)
             }
         }.launchIn(viewModelScope)
     }
 
-    fun deleteFavItem(favouriteModel: favouriteModel){
+    fun deleteFavItem(favouriteModel: favouriteModel) {
         DeleteFav.deleteFavItemUseCase(favouriteModel).onEach {
             when (it) {
-                is ResultState.Loading -> {
-                    _deleteFavSt.value = DeleteFavState(isLoading = true)
-                }
-
-                is ResultState.Success -> {
-                    _deleteFavSt.value = DeleteFavState(data = it.data)
-                }
-
-                is ResultState.Error -> {
-                    _deleteFavSt.value = DeleteFavState(error = it.exception)
-                }
-
+                is ResultState.Loading -> _deleteFavSt.value = DeleteFavState(isLoading = true)
+                is ResultState.Success -> _deleteFavSt.value = DeleteFavState(data = it.data)
+                is ResultState.Error -> _deleteFavSt.value = DeleteFavState(error = it.exception)
             }
         }.launchIn(viewModelScope)
     }
 
-
-
-
-
-
-    //-------------------------------------------------------------------------------//
-
-    val _searchQuery = MutableStateFlow("")
-
-    fun onSearchQueryChange(query: String){
+    fun onSearchQueryChange(query: String) {
         _searchQuery.value = query
     }
 
-    fun searchQuery(){
+    fun searchQuery() {
         viewModelScope.launch {
             _searchQuery.debounce(500L).distinctUntilChanged()
                 .collect {
-                    if (it.isNotEmpty())
-                    {
+                    if (it.isNotEmpty()) {
                         searchProduct(query = it)
                     }
                 }
         }
     }
 
-    fun searchProduct(query: String){
+    fun searchProduct(query: String) {
         SearchProduct.getProductBySearchUseCase(query).onEach {
-            when(it){
-                is ResultState.Loading -> {
-                    _searchProductSt.value = SearchProductState(isLoading = true)
-                }
-                is ResultState.Success -> {
-                    _searchProductSt.value = SearchProductState(data = it.data)
-                }
-                is ResultState.Error -> {
-                    _searchProductSt.value = SearchProductState(error = it.exception)
-                }
+            when(it) {
+                is ResultState.Loading -> _searchProductSt.value = SearchProductState(isLoading = true)
+                is ResultState.Success -> _searchProductSt.value = SearchProductState(data = it.data)
+                is ResultState.Error -> _searchProductSt.value = SearchProductState(error = it.exception)
             }
         }.launchIn(viewModelScope)
     }
 
+    fun getNotifications() {
+        GetNotifications.execute().onEach {
+            when (it) {
+                is ResultState.Loading -> _getNotificationsSt.value = GetNotificationsState(isLoading = true)
+                is ResultState.Success -> _getNotificationsSt.value = GetNotificationsState(data = it.data)
+                is ResultState.Error -> _getNotificationsSt.value = GetNotificationsState(error = it.exception)
+            }
+        }.launchIn(viewModelScope)
+    }
 
-
-
-
+    fun deleteNotification(notificationId: String) {
+        DeleteNotification.execute(notificationId).onEach {
+            when (it) {
+                is ResultState.Loading -> _deleteNotificationSt.value = DeleteNotificationState(isLoading = true)
+                is ResultState.Success -> _deleteNotificationSt.value = DeleteNotificationState(data = it.data)
+                is ResultState.Error -> _deleteNotificationSt.value = DeleteNotificationState(error = it.exception)
+            }
+        }.launchIn(viewModelScope)
+    }
 }
 
-
-// _________________________________DATA CLASS_____________________________________
-
-data class getCategoryState(
-
-    val isLoading: Boolean = false,
-    val error: String = "",
-
-    // Here Changing
-    val data: List<category?> = emptyList()
-)
-
-data class getProductsState(
-    val isLoading: Boolean = false,
-    val error: String = "",
-    val data: List<ProductModel?> = emptyList()
-)
-
-data class RegisterState(
-    val isLoading: Boolean = false,
-    val error: String ?= null,
-    val data: String? = null
-)
-
-data class LoginState(
-    val isLoading: Boolean = false,
-    val error: String ?= null,
-    val data: String? = null
-)
-
-data class GetUserDataState(
-    val isLoading: Boolean = false,
-    val error: String ?= null,
-    val data:userData? = null,
-    )
-
-data class UpdateDataState(
-    val isLoading: Boolean = false,
-    val error: String ?= null,
-    val data: String? = null
-)
-
-    data class GetProductByIdState(
-        val isLoading: Boolean = false,
-        val error: String ?= null,
-        val data:ProductModel? = null
-    )
-
-data class GetBannerState(
-    val isLoading: Boolean = false,
-    val error: String ?= null,
-    val data:List<String>? = null
-)
-
-data class SetCartItemState(
-
-    val isLoading: Boolean = false,
-    val error: String ?= null,
-    val data:String? = null,
-)
-
-data class GetCartItemState(
-    val isLoading: Boolean = false,
-    val error: String ?= null,
-    val data:List<cartItemModel?> = emptyList()
-
-)
-
-data class DeleteCartState(
-
-    val isLoading: Boolean = false,
-    val error: String ?= null,
-    val data:String? = null,
-)
-
-data class SetFavItemState(
-    val isLoading: Boolean = false,
-    val error: String ?= null,
-    val data:String? = null
-)
-
-data class GetFavItemState(
-    val isLoading: Boolean = false,
-    val error: String ?= null,
-    val data:List<favouriteModel?> = emptyList()
-)
-
-data class DeleteFavState(
-
-    val isLoading: Boolean = false,
-    val error: String ?= null,
-    val data:String? = null,
-)
-
-data class SearchProductState(
-    val isLoading: Boolean = false,
-    val error: String ?= null,
-    val data:List<ProductModel?> = emptyList()
-)
+// Data States
+data class getCategoryState(val isLoading: Boolean = false, val error: String = "", val data: List<category?> = emptyList())
+data class getProductsState(val isLoading: Boolean = false, val error: String = "", val data: List<ProductModel?> = emptyList())
+data class RegisterState(val isLoading: Boolean = false, val error: String ?= null, val data: String? = null)
+data class LoginState(val isLoading: Boolean = false, val error: String ?= null, val data: String? = null)
+data class GetUserDataState(val isLoading: Boolean = false, val error: String ?= null, val data:userData? = null)
+data class UpdateDataState(val isLoading: Boolean = false, val error: String ?= null, val data: String? = null)
+data class GetProductByIdState(val isLoading: Boolean = false, val error: String ?= null, val data:ProductModel? = null)
+data class GetBannerState(val isLoading: Boolean = false, val error: String ?= null, val data:List<String>? = null)
+data class SetCartItemState(val isLoading: Boolean = false, val error: String ?= null, val data:String? = null)
+data class GetCartItemState(val isLoading: Boolean = false, val error: String ?= null, val data:List<cartItemModel?> = emptyList())
+data class DeleteCartState(val isLoading: Boolean = false, val error: String ?= null, val data:String? = null)
+data class SetFavItemState(val isLoading: Boolean = false, val error: String ?= null, val data:String? = null)
+data class GetFavItemState(val isLoading: Boolean = false, val error: String ?= null, val data:List<favouriteModel?> = emptyList())
+data class DeleteFavState(val isLoading: Boolean = false, val error: String ?= null, val data:String? = null)
+data class SearchProductState(val isLoading: Boolean = false, val error: String ?= null, val data:List<ProductModel?> = emptyList())
+data class GetNotificationsState(val isLoading: Boolean = false, val error: String ?= null, val data: List<NotificationModel> = emptyList())
+data class DeleteNotificationState(val isLoading: Boolean = false, val error: String ?= null, val data: String? = null)

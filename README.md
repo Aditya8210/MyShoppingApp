@@ -42,9 +42,9 @@ The project is divided into three distinct layers to ensure scalability and test
 
 ## 📸 Screenshots
 
-| Home Page | Product Detail | Order History | Tracking |
-| :---: | :---: | :---: | :---: |
-| <img src="app/src/main/res/drawable/orderconform.webp" width="200"> | <img src="app/src/main/res/drawable/orderconform.webp" width="200"> | <img src="app/src/main/res/drawable/orderconform.webp" width="200"> | <img src="app/src/main/res/drawable/orderconform.webp" width="200"> |
+| Home Page | Product Detail | Checkout | Order History | Tracking |
+| :---: | :---: |:-------------------------------------------------------------------:| :---: | :---: |
+| <img src="C:\Users\asus\Desktop\Png Logo\New folder\Screenshot_2026-05-13-02-08-35-60_9f051452c5acd4e8150126883bb94e1a.jpg" width="200"/> | <img src="C:\Users\asus\Desktop\Png Logo\New folder\Screenshot_2026-05-13-02-14-24-08.jpg" width="200"/> | <img src="C:\Users\asus\Desktop\Png Logo\New folder\IMG_20260513_025404.png" width="200"/> | <img src="C:\Users\asus\Desktop\Png Logo\New folder\Screenshot_2026-05-13-02-12-51-93_9f051452c5acd4e8150126883bb94e1a.jpg" width="200"/> | <img src="C:\Users\asus\Desktop\Png Logo\New folder\IMG_20260513_022129.jpg" width="200"/> |
 
 ---
 
@@ -90,4 +90,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
-*Developed with ❤️ by [Your Name]*
+*Developed with ❤️ by [Aditya Kumar]*

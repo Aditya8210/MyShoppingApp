@@ -9,6 +9,7 @@ import com.wp7367.myshoppingapp.domain_layer.models.favouriteModel
 import com.wp7367.myshoppingapp.domain_layer.models.orderModel
 import com.wp7367.myshoppingapp.domain_layer.models.shippingModel
 
+import com.wp7367.myshoppingapp.domain_layer.models.NotificationModel
 import com.wp7367.myshoppingapp.domain_layer.models.userData
 import kotlinx.coroutines.flow.Flow
 
@@ -67,6 +68,12 @@ interface repo  {
   ): Flow<ResultState<String>>
 
   fun createRazorpayOrder(amount: Double, userId: String): Flow<ResultState<String>>
+
+  fun getNotifications(): Flow<ResultState<List<NotificationModel>>>
+
+  fun addNotification(notification: NotificationModel): Flow<ResultState<String>>
+
+  fun deleteNotification(notificationId: String): Flow<ResultState<String>>
 
 
 

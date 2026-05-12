@@ -1,6 +1,7 @@
 package com.wp7367.myshoppingapp.ui_layer.screens.homeScreenPage
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -14,9 +15,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.NotificationsNone
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,9 +26,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -57,6 +62,19 @@ fun HomeScreenUi(
 
     val searchQuery = remember { mutableStateOf("") }
 
+    // Listen for category selection from SeeAllCategoryScreen
+    val selectedCategory = navController.currentBackStackEntry
+        ?.savedStateHandle
+        ?.get<String>("selected_category")
+
+    LaunchedEffect(selectedCategory) {
+        if (selectedCategory != null) {
+            searchQuery.value = selectedCategory
+            viewModels.onSearchQueryChange(selectedCategory)
+            navController.currentBackStackEntry?.savedStateHandle?.remove<String>("selected_category")
+        }
+    }
+
     LaunchedEffect(key1 = Unit) {
         viewModels.getAllCategory()
         viewModels.getAllProduct()
@@ -65,76 +83,109 @@ fun HomeScreenUi(
     }
 
     Scaffold(
-        modifier = modifier,
-        topBar = {
-            Column(modifier = Modifier
-                .background(Color.White)
-                .statusBarsPadding()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TextField(
-                        value = searchQuery.value,
-                        onValueChange = {
-                            searchQuery.value = it
-                            viewModels.onSearchQueryChange(it)
-                        },
-                        placeholder = { Text(text = "Search products...", fontSize = 14.sp) },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray) },
-                        modifier = Modifier
-                            .weight(1f)
-                            .heightIn(min = 52.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color(0xFFF3F3F3),
-                            unfocusedContainerColor = Color(0xFFF3F3F3),
-                            disabledContainerColor = Color(0xFFF3F3F3),
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            disabledIndicatorColor = Color.Transparent
-                        )
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    IconButton(
-                        onClick = {},
-                        modifier = Modifier
-                            .background(Color(0xFFF3F3F3), RoundedCornerShape(12.dp))
-                            .size(52.dp)
-                    ) {
-                        Icon(Icons.Default.NotificationsNone, contentDescription = null)
-                    }
-                }
-            }
-        }
+        modifier = modifier
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(bottom = innerPadding.calculateBottomPadding())
                 .background(Color.White)
         ) {
-            if (searchQuery.value.isNotEmpty()) {
-                if (searchQueryState.data.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("No products found", color = Color.Gray)
-                    }
-                } else {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        contentPadding = PaddingValues(16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier.fillMaxSize()
+            // Custom Top Bar inside content for better control
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Search Bar
+                TextField(
+                    value = searchQuery.value,
+                    onValueChange = {
+                        searchQuery.value = it
+                        viewModels.onSearchQueryChange(it)
+                    },
+                    placeholder = { Text(text = "Search for items...", color = Color.Gray, fontSize = 14.sp) },
+                    leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null, tint = Color.Gray) },
+                    trailingIcon = {
+                        if (searchQuery.value.isNotEmpty()) {
+                            IconButton(onClick = {
+                                searchQuery.value = ""
+                                viewModels.onSearchQueryChange("")
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Clear",
+                                    tint = Color.Gray
+                                )
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color(0xFFF3F3F3),
+                        unfocusedContainerColor = Color(0xFFF3F3F3),
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    )
+                )
+
+                // Notification Icon
+                IconButton(
+                    onClick = { navController.navigate(Routes.NotificationScreen) },
+                    modifier = Modifier
+                        .background(Color(0xFFF8F8F8), CircleShape)
+                        .size(44.dp)
+                ) {
+                    BadgedBox(
+                        badge = {
+                            Badge(
+                                containerColor = Color.Red,
+                                modifier = Modifier.size(8.dp)
+                            )
+                        }
                     ) {
-                        items(searchQueryState.data) { product ->
-                            product?.let {
-                                AllProduct(product = it, onClick = {
-                                    navController.navigate(Routes.EachProductDetailScreen(it.productId))
-                                })
+                        Icon(
+                            Icons.Outlined.Notifications,
+                            contentDescription = "Notifications",
+                            tint = Color.Black,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+            }
+
+            if (searchQuery.value.isNotEmpty()) {
+                when {
+                    searchQueryState.isLoading -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                    searchQueryState.data.isEmpty() -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text("No products found", color = Color.Gray)
+                        }
+                    }
+                    else -> {
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(2),
+                            contentPadding = PaddingValues(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            items(searchQueryState.data) { product ->
+                                product?.let {
+                                    AllProduct(product = it, onClick = {
+                                        navController.navigate(Routes.EachProductDetailScreen(it.productId))
+                                    })
+                                }
                             }
                         }
                     }
@@ -142,18 +193,24 @@ fun HomeScreenUi(
             } else {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     // Category Section
-                    SectionHeader(title = "Categories", onSeeMore = {})
+                    SectionHeader(
+                        title = "Categories",
+                        onSeeMore = { navController.navigate(Routes.SeeAllCategories) }
+                    )
                     LazyRow(
                         modifier = Modifier.fillMaxWidth(),
                         contentPadding = PaddingValues(horizontal = 16.dp),
                         horizontalArrangement = Arrangement.spacedBy(20.dp)
                     ) {
                         items(ctState.data) { data ->
-                            data?.let {
+                            data?.let { categoryData ->
                                 CategoryItem(
-                                    imageUri = it.imageUri,
-                                    category = it.name,
-                                    onClick = {}
+                                    imageUri = categoryData.imageUri,
+                                    category = categoryData.name,
+                                    onClick = {
+                                        searchQuery.value = categoryData.name
+                                        viewModels.onSearchQueryChange(categoryData.name)
+                                    }
                                 )
                             }
                         }
@@ -265,6 +322,7 @@ fun SectionHeader(title: String, onSeeMore: () -> Unit) {
 fun CategoryItem(imageUri: String, category: String, onClick: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
         modifier = Modifier.clickable { onClick() }
     ) {
         Box(

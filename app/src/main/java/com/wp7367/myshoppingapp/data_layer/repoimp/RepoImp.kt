@@ -1,6 +1,7 @@
 package com.wp7367.myshoppingapp.data_layer.repoimp
 
 
+import android.content.Context
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.messaging.FirebaseMessaging
@@ -8,18 +9,22 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.wp7367.myshoppingapp.common.CART
 import com.wp7367.myshoppingapp.common.CATEGORY
 import com.wp7367.myshoppingapp.common.FAVOURITE
+import com.wp7367.myshoppingapp.common.NOTIFICATIONS
 import com.wp7367.myshoppingapp.common.ORDER
 import com.wp7367.myshoppingapp.common.ORDER_DATA
 import com.wp7367.myshoppingapp.common.PRODUCT
+import com.wp7367.myshoppingapp.common.USER_TOKEN
 
 import com.wp7367.myshoppingapp.common.ResultState
 import com.wp7367.myshoppingapp.common.SHIPPING_DATA
 import com.wp7367.myshoppingapp.common.USERS
 
+import com.wp7367.myshoppingapp.data_layer.notification.NotificationHelper
 import com.wp7367.myshoppingapp.data_layer.remote.PaymentApiService
 import com.wp7367.myshoppingapp.data_layer.remote.PaymentVerificationRequest
 import com.wp7367.myshoppingapp.domain_layer.models.category
 import com.wp7367.myshoppingapp.domain_layer.models.ProductModel
+import com.wp7367.myshoppingapp.domain_layer.models.NotificationModel
 import com.wp7367.myshoppingapp.domain_layer.models.cartItemModel
 import com.wp7367.myshoppingapp.domain_layer.models.favouriteModel
 import com.wp7367.myshoppingapp.domain_layer.models.orderModel
@@ -27,6 +32,7 @@ import com.wp7367.myshoppingapp.domain_layer.models.shippingModel
 
 import com.wp7367.myshoppingapp.domain_layer.models.userData
 import com.wp7367.myshoppingapp.domain_layer.repo.repo
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -34,9 +40,12 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.jvm.java
 
-class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFirestore,
-                                   private val FirebaseAuth: FirebaseAuth,
-                                   private val paymentApiService: PaymentApiService): repo{
+class RepoImp @Inject constructor(
+    private val FirebaseFirestore: FirebaseFirestore,
+    private val FirebaseAuth: FirebaseAuth,
+    private val paymentApiService: PaymentApiService,
+    @ApplicationContext private val context: Context
+): repo{
 
 
 
@@ -416,17 +425,18 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
     }
 
     //~ SearchFeature ~
-    override fun searchFeature(query: String): Flow<ResultState<List<ProductModel>>>  =callbackFlow{
+    override fun searchFeature(query: String): Flow<ResultState<List<ProductModel>>> = callbackFlow {
 
         trySend(ResultState.Loading)
-        FirebaseFirestore.collection(PRODUCT).orderBy("name")
-
-            .startAt(query).get()
-            .addOnSuccessListener {
-                val products = it.documents.mapNotNull {
-                    it.toObject(ProductModel::class.java)?.apply {
-                        productId =it.id
+        FirebaseFirestore.collection(PRODUCT).get()
+            .addOnSuccessListener { querySnapshot ->
+                val products = querySnapshot.documents.mapNotNull { documentSnapshot ->
+                    documentSnapshot.toObject(ProductModel::class.java)?.apply {
+                        productId = documentSnapshot.id
                     }
+                }.filter {
+                    it.name.contains(query, ignoreCase = true) ||
+                            it.category.contains(query, ignoreCase = true)
                 }
                 trySend(ResultState.Success(products))
             }
@@ -588,6 +598,20 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
 
         newOrderRef.set(orderMap)
             .addOnSuccessListener {
+                NotificationHelper.showOrderConfirmationNotification(
+                    context,
+                    "Order Confirmed!",
+                    "Thank you for shopping with us. Your order has been placed successfully."
+                )
+                
+                // Save notification to Firestore as well
+                val notification = NotificationModel(
+                    title = "Order Confirmed!",
+                    message = "Your order with ID ${orderId.takeLast(6)} has been placed successfully."
+                )
+                FirebaseFirestore.collection(USERS).document(user.uid)
+                    .collection(NOTIFICATIONS).add(notification)
+
                 trySend(ResultState.Success("Order Successfully"))
                 close()
             }
@@ -737,13 +761,85 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
 
 
 
+    override fun getNotifications(): Flow<ResultState<List<NotificationModel>>> = callbackFlow {
+        trySend(ResultState.Loading)
+        val user = FirebaseAuth.currentUser
+        if (user == null) {
+            trySend(ResultState.Error("User not logged in"))
+            close()
+            return@callbackFlow
+        }
+
+        val listener = FirebaseFirestore.collection(USERS).document(user.uid)
+            .collection(NOTIFICATIONS)
+            .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    trySend(ResultState.Error(error.message ?: "Failed to fetch notifications"))
+                    return@addSnapshotListener
+                }
+                val notifications = snapshot?.documents?.mapNotNull { doc ->
+                    doc.toObject(NotificationModel::class.java)?.copy(id = doc.id)
+                } ?: emptyList()
+                trySend(ResultState.Success(notifications))
+            }
+        awaitClose { listener.remove() }
+    }
+
+    override fun addNotification(notification: NotificationModel): Flow<ResultState<String>> = callbackFlow {
+        trySend(ResultState.Loading)
+        val user = FirebaseAuth.currentUser
+        if (user == null) {
+            trySend(ResultState.Error("User not logged in"))
+            close()
+            return@callbackFlow
+        }
+
+        FirebaseFirestore.collection(USERS).document(user.uid)
+            .collection(NOTIFICATIONS)
+            .add(notification)
+            .addOnSuccessListener {
+                trySend(ResultState.Success("Notification added"))
+                close()
+            }
+            .addOnFailureListener {
+                trySend(ResultState.Error(it.message ?: "Failed to add notification"))
+                close()
+            }
+        awaitClose { }
+    }
+
+    override fun deleteNotification(notificationId: String): Flow<ResultState<String>> = callbackFlow {
+        trySend(ResultState.Loading)
+        val user = FirebaseAuth.currentUser
+        if (user == null) {
+            trySend(ResultState.Error("User not logged in"))
+            close()
+            return@callbackFlow
+        }
+
+        FirebaseFirestore.collection(USERS).document(user.uid)
+            .collection(NOTIFICATIONS)
+            .document(notificationId)
+            .delete()
+            .addOnSuccessListener {
+                trySend(ResultState.Success("Notification deleted"))
+                close()
+            }
+            .addOnFailureListener {
+                trySend(ResultState.Error(it.message ?: "Failed to delete notification"))
+                close()
+            }
+        awaitClose { }
+    }
+
     //   ~ Fcm Push Notification ~
 
     private fun updateFcmToken(userId: String){
         FirebaseMessaging.getInstance().token.addOnCompleteListener{
             if (it.isSuccessful){
                 val token = it.result
-                FirebaseFirestore.collection("USER_TOKEN").document(userId).set(mapOf("token" to token))
+                FirebaseFirestore.collection(USER_TOKEN).document(userId).set(mapOf("token" to token))
             }
         }
     }
