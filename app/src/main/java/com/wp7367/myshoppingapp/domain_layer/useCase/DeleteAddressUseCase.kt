@@ -6,6 +6,6 @@ import javax.inject.Inject
 
 class DeleteAddressUseCase @Inject constructor(private val repo: repo) {
 
-    suspend fun deleteAddressUseCase(shippingModel: shippingModel) = repo.deleteShippingAddress(shippingModel)
+    fun deleteAddressUseCase(shippingModel: shippingModel) = repo.deleteShippingAddress(shippingModel)
 
 }

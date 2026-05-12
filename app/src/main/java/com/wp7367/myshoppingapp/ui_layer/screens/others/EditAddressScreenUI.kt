@@ -1,61 +1,53 @@
 package com.wp7367.myshoppingapp.ui_layer.screens.others
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import android.util.Patterns
+import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
-import android.util.Patterns
-import android.widget.Toast
-import androidx.compose.foundation.layout.Box
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import com.wp7367.myshoppingapp.domain_layer.models.shippingModel
 import com.wp7367.myshoppingapp.ui_layer.viewModel.ShippingViewModel
 
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditAddressScreen(modifier: Modifier = Modifier, navController: NavController,viewModel: ShippingViewModel = hiltViewModel()) {
-
-    val EditAddress by viewModel.shippingAddressSt.collectAsStateWithLifecycle()
-
+fun EditAddressScreen(
+    modifier: Modifier = Modifier,
+    navController: NavController,
+    viewModel: ShippingViewModel = hiltViewModel()
+) {
+    val editAddressState by viewModel.shippingAddressSt.collectAsStateWithLifecycle()
+    val existingAddressState by viewModel.getShippingAd.collectAsStateWithLifecycle()
     val context = LocalContext.current
-
-
 
     var email by remember { mutableStateOf("") }
     var fullName by remember { mutableStateOf("") }
     var address1 by remember { mutableStateOf("") }
-    var address2 by remember { mutableStateOf("") } // Optional field, might not need strict validation
+    var address2 by remember { mutableStateOf("") }
     var city by remember { mutableStateOf("") }
     var pinCode by remember { mutableStateOf("") }
     var contactNumber by remember { mutableStateOf("") }
@@ -71,271 +63,241 @@ fun EditAddressScreen(modifier: Modifier = Modifier, navController: NavControlle
 
     val scrollState = rememberScrollState()
 
-
-    when{
-        EditAddress.isLoading ->{
-            Box(modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center){
-                CircularProgressIndicator()
-
-            }
-        }
-        EditAddress.error != null ->{
-            Text(text = EditAddress.error.toString())
-        }
-        EditAddress.data != null ->{
-
-            email = ""
-            fullName =""
-            address1 = ""
-            address2 = ""
-            city = ""
-            contactNumber  = ""
-            pinCode = ""
-            state = ""
-
-            Toast.makeText(context, "Address Add", Toast.LENGTH_SHORT).show()
-
-            viewModel.resetState()
-
-
-        }
-
+    // Fetch existing address
+    LaunchedEffect(Unit) {
+        viewModel.getShippingDataById()
     }
 
+    // Pre-fill fields if address exists
+    LaunchedEffect(existingAddressState.data) {
+        val existing = existingAddressState.data.firstOrNull()
+        if (existing != null) {
+            email = existing.email
+            fullName = existing.fullName
+            address1 = existing.address1
+            address2 = existing.address2
+            city = existing.city
+            pinCode = existing.postalCode
+            contactNumber = existing.contactNumber
+            state = existing.state
+        }
+    }
 
-
-
-
-
-
-
+    LaunchedEffect(editAddressState) {
+        if (editAddressState.data != null) {
+            Toast.makeText(context, "Address Saved Successfully", Toast.LENGTH_SHORT).show()
+            viewModel.resetState()
+            navController.popBackStack()
+        }
+        if (editAddressState.error != null) {
+            Toast.makeText(context, editAddressState.error, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     fun validateForm(): Boolean {
         var isValid = true
+        if (email.isBlank()) { emailError = "Required"; isValid = false } 
+        else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) { emailError = "Invalid Email"; isValid = false } 
+        else { emailError = null }
 
-        // Email validation
-        if (email.isBlank()) {
-            emailError = "Email cannot be empty"
-            isValid = false
-        } else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            emailError = "Invalid email format"
-            isValid = false
-        } else {
-            emailError = null
-        }
+        if (fullName.isBlank()) { fullNameError = "Required"; isValid = false } else { fullNameError = null }
+        if (address1.isBlank()) { address1Error = "Required"; isValid = false } else { address1Error = null }
+        if (city.isBlank()) { cityError = "Required"; isValid = false } else { cityError = null }
+        if (state.isBlank()) { stateError = "Required"; isValid = false } else { stateError = null }
 
-        // Full Name validation
-        if (fullName.isBlank()) {
-            fullNameError = "Full name cannot be empty"
-            isValid = false
-        } else {
-            fullNameError = null
-        }
+        if (pinCode.isBlank()) { pinCodeError = "Required"; isValid = false } 
+        else if (pinCode.length != 6 || !pinCode.all { it.isDigit() }) { pinCodeError = "Invalid (6 digits)"; isValid = false } 
+        else { pinCodeError = null }
 
-        // Address1 validation
-        if (address1.isBlank()) {
-            address1Error = "Address line 1 cannot be empty"
-            isValid = false
-        } else {
-            address1Error = null
-        }
+        if (contactNumber.isBlank()) { contactNumberError = "Required"; isValid = false } 
+        else if (contactNumber.length < 10 || !contactNumber.all { it.isDigit() }) { contactNumberError = "Invalid (10 digits)"; isValid = false } 
+        else { contactNumberError = null }
 
-        // City validation
-        if (city.isBlank()) {
-            cityError = "City cannot be empty"
-            isValid = false
-        } else {
-            cityError = null
-        }
-
-        // PinCode validation
-        if (pinCode.isBlank()) {
-            pinCodeError = "Pin code cannot be empty"
-            isValid = false
-        } else if (pinCode.any { !it.isDigit() } || pinCode.length != 6) {
-            pinCodeError = "Invalid pin code (must be 6 digits)"
-            isValid = false
-        } else {
-            pinCodeError = null
-        }
-
-        // Contact Number validation
-        if (contactNumber.isBlank()) {
-            contactNumberError = "Contact number cannot be empty"
-            isValid = false
-        } else if (contactNumber.any { !it.isDigit() } || contactNumber.length < 10) { // Basic check for digits and length
-            contactNumberError = "Invalid contact number"
-            isValid = false
-        } else {
-            contactNumberError = null
-        }
-
-        // State validation
-        if (state.isBlank()) {
-            stateError = "State cannot be empty"
-            isValid = false
-        } else {
-            stateError = null
-        }
-        
         return isValid
     }
 
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(10.dp)
-                .verticalScroll(scrollState)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Address",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    text = "Continue Shopping",
-                    color = Color.Gray,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Text("Contact Information:", style = MaterialTheme.typography.bodyMedium)
-            OutlinedTextField(
-                value = email,
-                onValueChange = { 
-                    email = it 
-                    emailError = null 
-                },
-                label = { Text("Email") },
-                modifier = Modifier.fillMaxWidth(),
-                isError = emailError != null,
-                supportingText = { emailError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
-            )
-            OutlinedTextField(
-                value = contactNumber,
-                onValueChange = { 
-                    contactNumber = it
-                    contactNumberError = null
-                },
-                label = { Text("Contact Number") },
-                modifier = Modifier.fillMaxWidth(),
-                isError = contactNumberError != null,
-                supportingText = { contactNumberError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text("Shipping Address:", style = MaterialTheme.typography.bodyMedium)
-            OutlinedTextField(
-                value = fullName,
-                onValueChange = { 
-                    fullName = it 
-                    fullNameError = null
-                },
-                label = { Text("Full Name") },
-                modifier = Modifier.fillMaxWidth(),
-                isError = fullNameError != null,
-                supportingText = { fullNameError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
-            )
-            Spacer(modifier = Modifier.height(5.dp))
-
-            OutlinedTextField(
-                value = address1,
-                onValueChange = { 
-                    address1 = it 
-                    address1Error = null
-                },
-                label = { Text("House No, Building Name") },
-                modifier = Modifier.fillMaxWidth(),
-                isError = address1Error != null,
-                supportingText = { address1Error?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
-            )
-            Spacer(modifier = Modifier.height(5.dp))
-
-            OutlinedTextField(
-                value = address2,
-                onValueChange = { address2 = it }, // No specific error state for address2, can be optional
-                label = { Text("RoadName, Area,Colony (Optional)") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(5.dp))
-
-            OutlinedTextField(
-                value = city,
-                onValueChange = { 
-                    city = it 
-                    cityError = null
-                },
-                label = { Text("City") },
-                modifier = Modifier.fillMaxWidth(),
-                isError = cityError != null,
-                supportingText = { cityError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
-            )
-            Spacer(modifier = Modifier.height(5.dp))
-
-            OutlinedTextField(
-                value = pinCode,
-                onValueChange = { 
-                    pinCode = it 
-                    pinCodeError = null
-                },
-                label = { Text("PinCode") },
-                modifier = Modifier.fillMaxWidth(),
-                isError = pinCodeError != null,
-                supportingText = { pinCodeError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
-            )
-
-            Spacer(modifier = Modifier.height(5.dp))
-
-            OutlinedTextField(
-                value = state,
-                onValueChange = { 
-                    state = it 
-                    stateError = null
-                },
-                label = { Text("State") },
-                modifier = Modifier.fillMaxWidth(),
-                isError = stateError != null,
-                supportingText = { stateError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = {
-                    if (validateForm()) {
-
-                        val addressData = shippingModel(
-                            email = email,
-                            fullName = fullName,
-                            address1 = address1,
-                            address2 = address2,
-                            city = city,
-                            postalCode = pinCode,
-                            contactNumber  = contactNumber,
-                            state = state,
-
-                        )
-                        viewModel.shippingAddress(addressData)
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("Shipping Address", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
-                shape = RoundedCornerShape(12.dp)
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
+            )
+        },
+        bottomBar = {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shadowElevation = 8.dp,
+                color = Color.White
             ) {
-                Text("Save")
+                Button(
+                    onClick = {
+                        if (validateForm()) {
+                            val addressData = shippingModel(
+                                email = email,
+                                fullName = fullName,
+                                address1 = address1,
+                                address2 = address2,
+                                city = city,
+                                postalCode = pinCode,
+                                contactNumber = contactNumber,
+                                state = state,
+                            )
+                            viewModel.shippingAddress(addressData)
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .height(56.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE57373))
+                ) {
+                    Text("Save Address", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
             }
+        }
+    ) { innerPadding ->
+        Box(modifier = Modifier.fillMaxSize().padding(innerPadding).background(Color(0xFFF8F8F8))) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                AddressSectionCard(title = "Contact Details", icon = Icons.Default.Info) {
+                    AddressTextField(
+                        value = email,
+                        onValueChange = { email = it; emailError = null },
+                        label = "Email Address",
+                        error = emailError,
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Next
+                    )
+                    AddressTextField(
+                        value = contactNumber,
+                        onValueChange = { contactNumber = it; contactNumberError = null },
+                        label = "Phone Number",
+                        error = contactNumberError,
+                        keyboardType = KeyboardType.Phone,
+                        imeAction = ImeAction.Next
+                    )
+                }
+
+                AddressSectionCard(title = "Shipping Details", icon = Icons.Default.LocationOn) {
+                    AddressTextField(
+                        value = fullName,
+                        onValueChange = { fullName = it; fullNameError = null },
+                        label = "Full Name",
+                        error = fullNameError,
+                        imeAction = ImeAction.Next
+                    )
+                    AddressTextField(
+                        value = address1,
+                        onValueChange = { address1 = it; address1Error = null },
+                        label = "House No, Building Name",
+                        error = address1Error,
+                        imeAction = ImeAction.Next
+                    )
+                    AddressTextField(
+                        value = address2,
+                        onValueChange = { address2 = it },
+                        label = "Area, Colony, Road Name (Optional)",
+                        imeAction = ImeAction.Next
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            AddressTextField(
+                                value = city,
+                                onValueChange = { city = it; cityError = null },
+                                label = "City",
+                                error = cityError,
+                                imeAction = ImeAction.Next
+                            )
+                        }
+                        Box(modifier = Modifier.weight(1f)) {
+                            AddressTextField(
+                                value = pinCode,
+                                onValueChange = { pinCode = it; pinCodeError = null },
+                                label = "Pincode",
+                                error = pinCodeError,
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Next
+                            )
+                        }
+                    }
+                    AddressTextField(
+                        value = state,
+                        onValueChange = { state = it; stateError = null },
+                        label = "State",
+                        error = stateError,
+                        imeAction = ImeAction.Done
+                    )
+                }
+                Spacer(modifier = Modifier.height(80.dp))
+            }
+
+            if (editAddressState.isLoading || existingAddressState.isLoading) {
+                Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Color(0xFFE57373))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AddressSectionCard(title: String, icon: ImageVector, content: @Composable ColumnScope.() -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(icon, contentDescription = null, tint = Color(0xFFE57373), modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.height(16.dp))
+            content()
+        }
+    }
+}
+
+@Composable
+fun AddressTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    error: String? = null,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    imeAction: ImeAction = ImeAction.Default
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            label = { Text(label) },
+            modifier = Modifier.fillMaxWidth(),
+            isError = error != null,
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFFE57373),
+                focusedLabelColor = Color(0xFFE57373),
+                cursorColor = Color(0xFFE57373)
+            ),
+            singleLine = true
+        )
+        if (error != null) {
+            Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 4.dp, top = 2.dp))
         }
     }
 }

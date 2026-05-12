@@ -1,7 +1,6 @@
 package com.wp7367.myshoppingapp.data_layer.repoimp
 
 
-import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.messaging.FirebaseMessaging
@@ -17,6 +16,8 @@ import com.wp7367.myshoppingapp.common.ResultState
 import com.wp7367.myshoppingapp.common.SHIPPING_DATA
 import com.wp7367.myshoppingapp.common.USERS
 
+import com.wp7367.myshoppingapp.data_layer.remote.PaymentApiService
+import com.wp7367.myshoppingapp.data_layer.remote.PaymentVerificationRequest
 import com.wp7367.myshoppingapp.domain_layer.models.category
 import com.wp7367.myshoppingapp.domain_layer.models.ProductModel
 import com.wp7367.myshoppingapp.domain_layer.models.cartItemModel
@@ -29,16 +30,18 @@ import com.wp7367.myshoppingapp.domain_layer.repo.repo
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.jvm.java
 
 class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFirestore,
-                                   private val FirebaseAuth: FirebaseAuth): repo{
+                                   private val FirebaseAuth: FirebaseAuth,
+                                   private val paymentApiService: PaymentApiService): repo{
 
 
 
     //  ~ Get All Category ~
-    override suspend fun getAllCategory(): Flow<ResultState<List<category>>> = callbackFlow{
+    override fun getAllCategory(): Flow<ResultState<List<category>>> = callbackFlow{
 
 
         trySend(ResultState.Loading)
@@ -62,7 +65,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
     }
 
     //     ~ Get All Product ~
-    override suspend fun getAllProduct(): Flow<ResultState<List<ProductModel>>> = callbackFlow {
+    override fun getAllProduct(): Flow<ResultState<List<ProductModel>>> = callbackFlow {
         trySend(ResultState.Loading)
 
         FirebaseFirestore.collection(PRODUCT).get().addOnSuccessListener { querySnapshot -> // querySnapshot contains multiple documents
@@ -86,7 +89,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
 
 
     //    ~ Register User With Email And Password ~
-    override suspend fun registerUserWithEmailAndPassword(userData: userData): Flow<ResultState<String>> = callbackFlow{
+    override fun registerUserWithEmailAndPassword(userData: userData): Flow<ResultState<String>> = callbackFlow{
         trySend(ResultState.Loading)
 
         FirebaseAuth.createUserWithEmailAndPassword(userData.email,userData.password).addOnSuccessListener {
@@ -111,7 +114,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
     }
 
     //~ Login User With Email And Password ~
-    override suspend fun loginWithEmailAndPassword(email: String, password: String): Flow<ResultState<String>> = callbackFlow {
+    override fun loginWithEmailAndPassword(email: String, password: String): Flow<ResultState<String>> = callbackFlow {
         trySend(ResultState.Loading)
         FirebaseAuth.signInWithEmailAndPassword(email,password).addOnSuccessListener {
             trySend(ResultState.Success("User Login Successfully"))
@@ -130,7 +133,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
 
 
     //     ~ Get User By Id ~
-    override suspend fun getUserById(uid: String): Flow<ResultState<userData>> = callbackFlow {
+    override fun getUserById(uid: String): Flow<ResultState<userData>> = callbackFlow {
         if (uid.isEmpty()) {
             trySend(ResultState.Error("User ID cannot be empty."))
         } else {
@@ -155,7 +158,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
 
 
     //~ Update User Data ~
-    override suspend fun updateUserData(userData: userData): Flow<ResultState<String>> = callbackFlow {
+    override fun updateUserData(userData: userData): Flow<ResultState<String>> = callbackFlow {
 
         trySend(ResultState.Loading)
 
@@ -173,7 +176,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
 
 
     // ~ Get Product by Id ~
-    override suspend fun getProductById(productId: String): Flow<ResultState<ProductModel>> = callbackFlow {
+    override fun getProductById(productId: String): Flow<ResultState<ProductModel>> = callbackFlow {
         trySend(ResultState.Loading)
         FirebaseFirestore.collection(PRODUCT).document(productId).get()
             .addOnSuccessListener {  document ->
@@ -191,11 +194,11 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
     }
 
     // ~ Get Banner ~
-    override suspend fun getBanner(): Flow<ResultState<List<String>>> = callbackFlow {
+    override fun getBanner(): Flow<ResultState<List<String>>> = callbackFlow {
         trySend(ResultState.Loading)
         FirebaseFirestore.collection("bannerdata").document("Banner").get()
             .addOnSuccessListener { document ->
-                val bannerList = document.get("urls") as List<String>
+                val bannerList = document.get("urls") as? List<String> ?: emptyList()
                 trySend(ResultState.Success(bannerList))
             }.addOnFailureListener {
                 trySend(ResultState.Error(it.message.toString()))
@@ -208,7 +211,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
 
 
     // ~ SetCartItem ~
-    override suspend fun setCartItem(cartItemModel: cartItemModel): Flow<ResultState<String>>  = callbackFlow{
+    override fun setCartItem(cartItemModel: cartItemModel): Flow<ResultState<String>>  = callbackFlow{
         trySend(ResultState.Loading)
         val currentUser = FirebaseAuth.currentUser
         if (currentUser == null) {
@@ -220,25 +223,40 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
         val cartRef = FirebaseFirestore.collection(USERS)
             .document(currentUser.uid)
             .collection(CART)
-            .document(cartItemModel.productId) // Use productId as document ID
+            .document(cartItemModel.productId)
 
-        FirebaseFirestore.runTransaction { transaction ->
-            val snapshot = transaction.get(cartRef)
+        cartRef.get().addOnSuccessListener { snapshot ->
             if (snapshot.exists()) {
                 val currentQuantity = snapshot.getLong("quantity")?.toInt() ?: 0
+                val newQuantity = currentQuantity + cartItemModel.quantity
 
-                transaction.update(cartRef, "quantity", currentQuantity + cartItemModel.quantity)
-
-                "Quantity updated for product: ${cartItemModel.productId}" // Message for success
+                if (cartItemModel.quantity > 0 && newQuantity > cartItemModel.availableUnits) {
+                    trySend(ResultState.Error("Limit reached! Only ${cartItemModel.availableUnits} units available."))
+                } else {
+                    cartRef.update("quantity", com.google.firebase.firestore.FieldValue.increment(cartItemModel.quantity.toLong()))
+                        .addOnSuccessListener {
+                            trySend(ResultState.Success("Quantity updated"))
+                        }
+                        .addOnFailureListener { e ->
+                            trySend(ResultState.Error(e.message ?: "Failed to update quantity"))
+                        }
+                }
             } else {
-                transaction.set(cartRef, cartItemModel)
-                "Product added to cart: ${cartItemModel.productId}" // Message for success
+                // If it doesn't exist, set the initial data
+                if (cartItemModel.quantity > cartItemModel.availableUnits) {
+                    trySend(ResultState.Error("Only ${cartItemModel.availableUnits} units available."))
+                } else {
+                    cartRef.set(cartItemModel)
+                        .addOnSuccessListener {
+                            trySend(ResultState.Success("Added to cart"))
+                        }
+                        .addOnFailureListener { e ->
+                            trySend(ResultState.Error(e.message ?: "Failed to add to cart"))
+                        }
+                }
             }
-        }.addOnSuccessListener { successMessage ->
-            trySend(ResultState.Success(successMessage))
-
         }.addOnFailureListener { e ->
-            trySend(ResultState.Error(e.message ?: "Failed to update cart due to an unknown error."))
+            trySend(ResultState.Error(e.message ?: "Failed to check cart item"))
         }
 
         awaitClose {
@@ -247,7 +265,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
     }
 
     // ~ GetCartItem ~
-    override suspend fun getCartItem(): Flow<ResultState<List<cartItemModel>>>  = callbackFlow {
+    override fun getCartItem(): Flow<ResultState<List<cartItemModel>>>  = callbackFlow {
 
         trySend(ResultState.Loading)
         val currentUser = FirebaseAuth.currentUser
@@ -276,7 +294,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
 
 
     // ~ DeleteCartItem ~
-    override suspend fun deleteCartItem(cartItemModel: cartItemModel): Flow<ResultState<String>> = callbackFlow{
+    override fun deleteCartItem(cartItemModel: cartItemModel): Flow<ResultState<String>> = callbackFlow{
 
         trySend(ResultState.Loading)
         val currentUser = FirebaseAuth.currentUser
@@ -302,7 +320,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
     }
 
     // ~ SetFavItem ~
-    override suspend fun setFavItem(favouriteModel: favouriteModel): Flow<ResultState<String>>  = callbackFlow{
+    override fun setFavItem(favouriteModel: favouriteModel): Flow<ResultState<String>>  = callbackFlow{
 
         trySend(ResultState.Loading)
         val currentUser = FirebaseAuth.currentUser
@@ -340,7 +358,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
     }
 
     // ~ GetFavItem ~
-    override suspend fun getFavItem(): Flow<ResultState<List<favouriteModel>>>  = callbackFlow{
+    override fun getFavItem(): Flow<ResultState<List<favouriteModel>>>  = callbackFlow{
 
         trySend(ResultState.Loading)
 
@@ -370,7 +388,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
     }
 
     //~ DeleteFavItem ~
-    override suspend fun deleteFavItem(favouriteModel: favouriteModel): Flow<ResultState<String>>  = callbackFlow{
+    override fun deleteFavItem(favouriteModel: favouriteModel): Flow<ResultState<String>>  = callbackFlow{
 
         trySend(ResultState.Loading)
 
@@ -398,7 +416,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
     }
 
     //~ SearchFeature ~
-    override suspend fun searchFeature(query: String): Flow<ResultState<List<ProductModel>>>  =callbackFlow{
+    override fun searchFeature(query: String): Flow<ResultState<List<ProductModel>>>  =callbackFlow{
 
         trySend(ResultState.Loading)
         FirebaseFirestore.collection(PRODUCT).orderBy("name")
@@ -421,7 +439,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
     }
 
     //~ ShippingAddress ~
-    override suspend fun shippingAddress(shippingModel: shippingModel): Flow<ResultState<String>> = callbackFlow {
+    override fun shippingAddress(shippingModel: shippingModel): Flow<ResultState<String>> = callbackFlow {
 
         trySend(ResultState.Loading)
         val currentUser = FirebaseAuth.currentUser
@@ -443,7 +461,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
     }
 
     //~ DeleteShippingAddress ~
-    override suspend fun deleteShippingAddress(shippingModel: shippingModel): Flow<ResultState<String>>  = callbackFlow{
+    override fun deleteShippingAddress(shippingModel: shippingModel): Flow<ResultState<String>>  = callbackFlow{
 
         trySend(ResultState.Loading)
         val currentUser = FirebaseAuth.currentUser
@@ -464,7 +482,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
     }
 
     //~ ShowShippingAddressById ~
-    override suspend fun showShippingAddressById(): Flow<ResultState<List<shippingModel>>> = callbackFlow {
+    override fun showShippingAddressById(): Flow<ResultState<List<shippingModel>>> = callbackFlow {
 
         trySend(ResultState.Loading)
 
@@ -485,88 +503,125 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
     }
 
     //~ OrderDataSave ~
-    override suspend fun orderDataSave(orderList: List<orderModel>): Flow<ResultState<String>> = callbackFlow {
+    override fun orderDataSave(orderList: List<orderModel>): Flow<ResultState<String>> = callbackFlow {
         trySend(ResultState.Loading)
 
+        val user = FirebaseAuth.currentUser
+        if (user == null) {
+            trySend(ResultState.Error("User not logged in"))
+            close()
+            return@callbackFlow
+        }
+
         val newOrderRef = FirebaseFirestore.collection(ORDER_DATA)
-            .document(FirebaseAuth.currentUser?.uid.toString())
+            .document(user.uid)
             .collection(ORDER)
             .document()
 
         val orderId = newOrderRef.id
-
         val updatedOrderList = orderList.map { it.copy(orderId = orderId) }
+        val orderMap = updatedOrderList.mapIndexed { index, order -> index.toString() to order }.toMap()
 
-        val orderMap =
-            updatedOrderList.mapIndexed { index, order -> index.toString() to order }.toMap()
+        newOrderRef.set(orderMap)
+            .addOnSuccessListener {
+                trySend(ResultState.Success("Order Successfully"))
+                close()
+            }
+            .addOnFailureListener {
+                trySend(ResultState.Error(it.message ?: "Failed to save order"))
+                close()
+            }
 
-        newOrderRef.set(orderMap).addOnSuccessListener {
-            trySend(ResultState.Success("Order Successfully"))
-//                pushNotification.sendNotification(
-//                    title = "Order Initiate",
-//                    message = "Order Successfully"
-//                )
-        }.addOnFailureListener {
-            trySend(ResultState.Error(it.message.toString()))
-        }
-        awaitClose {
-            close()
-        }
+        awaitClose { }
     }
 
     //~ GetOrderData ~
-    override suspend fun getOrderData(): Flow<ResultState<List<orderModel>>> = callbackFlow {
+    override fun getOrderData(): Flow<ResultState<List<orderModel>>> = callbackFlow {
         trySend(ResultState.Loading)
-        FirebaseFirestore.collection(ORDER_DATA).document(FirebaseAuth.currentUser?.uid.toString())
-            .collection(ORDER).get().addOnSuccessListener { querySnapshot ->
+        val user = FirebaseAuth.currentUser
+        if (user == null) {
+            trySend(ResultState.Error("User not logged in"))
+            close()
+            return@callbackFlow
+        }
+
+        FirebaseFirestore.collection(ORDER_DATA)
+            .document(user.uid)
+            .collection(ORDER)
+            .get()
+            .addOnSuccessListener { querySnapshot ->
                 val allOrders = mutableListOf<orderModel>()
 
                 querySnapshot.documents.forEach { document ->
-                    // Iterate over all fields in the document
-                    val maps = document.data // Get all the fields as a Map<String, Any>
+                    val maps = document.data
                     maps?.forEach { (_, value) ->
-                        val orderMap = value as? Map<*, *> // Cast each value to Map
+                        val orderMap = value as? Map<*, *>
                         orderMap?.let {
-                            val order =  orderModel(
-                                color = it["color"] as? String ?: "",
-                                date = it["date"] as? Long ?: 0,
-                                fullName = it["fullName"] as? String ?: "",
-                                contactNumber = it["mobileNo"] as? String ?: "", // Corrected key to mobileNo
-                                productCategory = it["productCategory"] as? String ?: "",
-                                productId = it["productId"] as? String ?: "",
-                                productDescription = it["productDescription"] as? String ?: "",
-                                productFinalPrice = it["productFinalPrice"] as? String ?: "",
-                                productImageUrl = it["productImageUrl"] as? String ?: "",
-                                productName = it["productName"] as? String ?: "",
-                                productQty = it["productQty"] as? String ?: "",
-                                size = it["size"] as? String ?: "",
-                                transactionId = it["transactionId"] as? String ?: "",
-                                transactionMethod = it["transactionMethod"] as? String ?: "",
-                                address = it["userAddress"] as? String ?: "", // Corrected key to userAddress
-                                email = it["userEmail"] as? String ?: "", // Corrected key to userEmail
+                            val order = orderModel(
                                 orderId = it["orderId"] as? String ?: "",
+                                productId = it["productId"] as? String ?: "",
+                                productName = it["productName"] as? String ?: "",
+                                productDescription = it["productDescription"] as? String ?: "",
+                                productQty = it["productQty"] as? String ?: "",
+                                productFinalPrice = it["productFinalPrice"] as? String ?: "",
+                                productCategory = it["productCategory"] as? String ?: "",
+                                productImageUrl = it["productImageUrl"] as? String ?: "",
+                                color = it["color"] as? String ?: "",
+                                size = it["size"] as? String ?: "",
+                                date = it["date"] as? Long ?: 0,
+                                transactionMethod = it["transactionMethod"] as? String ?: "",
+                                transactionId = it["transactionId"] as? String ?: "",
+                                email = it["email"] as? String ?: "",
+                                contactNumber = it["contactNumber"] as? String ?: "",
+                                fullName = it["fullName"] as? String ?: "",
+                                address = it["address"] as? String ?: "",
+                                status = it["status"] as? String ?: "Processing"
                             )
                             allOrders.add(order)
                         }
                     }
                 }
-                if (allOrders.isEmpty()) {
-                    // It's better to send Success with an empty list,
-                    // as 'No orders found' is not a true error state.
-                    // Your UI can then handle displaying the "empty" message.
-                    trySend(ResultState.Success(emptyList()))
-                } else {
-                    // Log only if the list is not empty
-                    Log.d("@order", "First order product name: ${allOrders.first().productName}")
-                    trySend(ResultState.Success(allOrders))
-                }
-
-            }.addOnFailureListener {
-                trySend(ResultState.Error(it.message.toString()))
+                trySend(ResultState.Success(allOrders))
+                close()
             }
-        awaitClose {
-            close()
+            .addOnFailureListener {
+                trySend(ResultState.Error(it.message ?: "Failed to fetch orders"))
+                close()
+            }
+        awaitClose { }
+    }
+
+    override fun verifyPaymentOnBackend(
+        paymentId: String,
+        orderId: String,
+        signature: String
+    ): Flow<ResultState<String>> = callbackFlow {
+        trySend(ResultState.Loading)
+
+        val request = PaymentVerificationRequest(
+            orderId = orderId,
+            paymentId = paymentId,
+            signature = signature
+        )
+
+        // Using coroutine scope from the flow context (which is typically IO for networking)
+        // Note: callbackFlow isn't the best for simple suspend calls, but we'll stick to the existing pattern
+        kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val response = paymentApiService.verifyPayment(request)
+                if (response.status == "success") {
+                    trySend(ResultState.Success("Payment Verified"))
+                } else {
+                    trySend(ResultState.Error(response.message ?: "Verification failed"))
+                }
+            } catch (e: Exception) {
+                trySend(ResultState.Error(e.message ?: "Network error"))
+            } finally {
+                close()
+            }
         }
+
+        awaitClose { }
     }
 
 

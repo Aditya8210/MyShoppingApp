@@ -5,6 +5,6 @@ import javax.inject.Inject
 
 class GetFavItemUseCase@Inject constructor(private val repo: repo) {
 
-    suspend fun getFavItemUseCase() = repo.getFavItem()
+    fun getFavItemUseCase() = repo.getFavItem()
 
 }

@@ -39,7 +39,10 @@ sealed class Routes {
 
     @Serializable
     data class CheckOutScreen(
-        val productId: String? // Changed to nullable String
+        val productId: String? = null,
+        val quantity: Int = 1,
+        val size: String = "",
+        val color: String = ""
     )
 
 

@@ -7,4 +7,5 @@ data class favouriteModel(
     val finalPrice: String = "",
     val category: String = "",
     val image: String = "",
+    val availableUnits: Int = 0
 )

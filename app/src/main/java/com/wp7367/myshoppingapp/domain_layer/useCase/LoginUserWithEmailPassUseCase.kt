@@ -5,5 +5,5 @@ import javax.inject.Inject
 
 
 class LoginUserWithEmailPassUseCase @Inject constructor(private val repo: repo){
-    suspend fun loginUserWithEmailPassUseCase(email: String, password: String, ) = repo.loginWithEmailAndPassword(email,password)
+    fun loginUserWithEmailPassUseCase(email: String, password: String, ) = repo.loginWithEmailAndPassword(email,password)
 }

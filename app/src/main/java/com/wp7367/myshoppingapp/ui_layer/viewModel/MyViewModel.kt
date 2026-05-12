@@ -25,12 +25,12 @@ import com.wp7367.myshoppingapp.domain_layer.models.cartItemModel
 import com.wp7367.myshoppingapp.domain_layer.models.favouriteModel
 import com.wp7367.myshoppingapp.domain_layer.models.userData
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -110,7 +110,7 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
     init {
         getAllCategory()
         getAllProduct()
-        getUserData("uid")
+        // getUserData("uid") // Usually uid is fetched after login
         getBanner()
         getCartItem()
         getFavItem()
@@ -122,313 +122,260 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
 //          ~ Here All Function and UseCase is Called ~
 
     fun getAllProduct() {
-        viewModelScope.launch {
-            GetAllProduct.getAllProductUseCase().collectLatest {
-                when (it) {
-                    is ResultState.Loading -> {
-                        _getAllProductSt.value = getProductsState(isLoading = true)
-                    }
+        GetAllProduct.getAllProductUseCase().onEach {
+            when (it) {
+                is ResultState.Loading -> {
+                    _getAllProductSt.value = getProductsState(isLoading = true)
+                }
 
-                    is ResultState.Success -> {
-                        _getAllProductSt.value = getProductsState(data = it.data)
-                    }
+                is ResultState.Success -> {
+                    _getAllProductSt.value = getProductsState(data = it.data)
+                }
 
-                    is ResultState.Error -> {
-                        _getAllProductSt.value = getProductsState(error = it.exception)
-                    }
+                is ResultState.Error -> {
+                    _getAllProductSt.value = getProductsState(error = it.exception)
                 }
             }
-        }
+        }.launchIn(viewModelScope)
     }
 
     fun getAllCategory() {
-
-        viewModelScope.launch {
-            GetAllCategory.getAllCategoryUseCase().collectLatest {
-                when (it) {
-                    is ResultState.Loading -> {
-                        _getAllCategorySt.value = getCategoryState(isLoading = true)
-                    }
-
-                    is ResultState.Success -> {
-                        _getAllCategorySt.value = getCategoryState(data = it.data)
-                    }
-
-                    is ResultState.Error -> {
-                        _getAllCategorySt.value = getCategoryState(error = it.exception)
-                    }
+        GetAllCategory.getAllCategoryUseCase().onEach {
+            when (it) {
+                is ResultState.Loading -> {
+                    _getAllCategorySt.value = getCategoryState(isLoading = true)
                 }
 
+                is ResultState.Success -> {
+                    _getAllCategorySt.value = getCategoryState(data = it.data)
+                }
+
+                is ResultState.Error -> {
+                    _getAllCategorySt.value = getCategoryState(error = it.exception)
+                }
             }
-
-        }
-
+        }.launchIn(viewModelScope)
     }
 
     fun getBanner(){
-        viewModelScope.launch {
-            GetBanner.getBannerUseCase().collectLatest {
-                when(it){
-                    is ResultState.Loading -> {
-                        _getBannerSt.value = GetBannerState(isLoading = true)
-                    }
-                    is ResultState.Success -> {
-                        _getBannerSt.value = GetBannerState(data = it.data)
-                    }
-                    is ResultState.Error -> {
-                        _getBannerSt.value = GetBannerState(error = it.exception)
+        GetBanner.getBannerUseCase().onEach {
+            when(it){
+                is ResultState.Loading -> {
+                    _getBannerSt.value = GetBannerState(isLoading = true)
+                }
+                is ResultState.Success -> {
+                    _getBannerSt.value = GetBannerState(data = it.data)
+                }
+                is ResultState.Error -> {
+                    _getBannerSt.value = GetBannerState(error = it.exception)
 
-                    }
                 }
             }
-
-        }
+        }.launchIn(viewModelScope)
     }
 
 
     fun registerUser(userData: userData) {
-        viewModelScope.launch {
-            RegisterUser.registerUserWithEmailPassUseCase(userData).collectLatest {
-                when (it) {
-                    is ResultState.Loading -> {
-                        _registerUserSt.value = RegisterState(isLoading = true)
-                    }
-
-                    is ResultState.Success -> {
-                        _registerUserSt.value = RegisterState(data = it.data)
-                    }
-
-                    is ResultState.Error -> {
-                        _registerUserSt.value = RegisterState(error = it.exception)
-                    }
-
+        RegisterUser.registerUserWithEmailPassUseCase(userData).onEach {
+            when (it) {
+                is ResultState.Loading -> {
+                    _registerUserSt.value = RegisterState(isLoading = true)
                 }
+
+                is ResultState.Success -> {
+                    _registerUserSt.value = RegisterState(data = it.data)
+                }
+
+                is ResultState.Error -> {
+                    _registerUserSt.value = RegisterState(error = it.exception)
+                }
+
             }
-        }
-
-
+        }.launchIn(viewModelScope)
     }
 
 
     fun loginUser(email: String, password: String) {
-
-        viewModelScope.launch {
-            LoginUser.loginUserWithEmailPassUseCase(email, password).collectLatest {
-                when (it) {
-                    is ResultState.Loading -> {
-                        _loginUserSt.value = LoginState(isLoading = true)
-                    }
-
-                    is ResultState.Success -> {
-                        _loginUserSt.value = LoginState(data = it.data)
-                    }
-
-                    is ResultState.Error -> {
-                        _loginUserSt.value = LoginState(error = it.exception)
-                    }
-
+        LoginUser.loginUserWithEmailPassUseCase(email, password).onEach {
+            when (it) {
+                is ResultState.Loading -> {
+                    _loginUserSt.value = LoginState(isLoading = true)
                 }
+
+                is ResultState.Success -> {
+                    _loginUserSt.value = LoginState(data = it.data)
+                }
+
+                is ResultState.Error -> {
+                    _loginUserSt.value = LoginState(error = it.exception)
+                }
+
             }
-        }
+        }.launchIn(viewModelScope)
     }
 
     fun getUserData(uid: String) {
-        viewModelScope.launch {
-            GetUserData.getUserByIdUseCase(uid).collectLatest {
-                when (it) {
-                    is ResultState.Loading -> {
-                        _getUserDataSt.value = GetUserDataState(isLoading = true)
-                    }
+        GetUserData.getUserByIdUseCase(uid).onEach {
+            when (it) {
+                is ResultState.Loading -> {
+                    _getUserDataSt.value = GetUserDataState(isLoading = true)
+                }
 
-                    is ResultState.Success -> {
-                        _getUserDataSt.value = GetUserDataState(data = it.data)
-                    }
+                is ResultState.Success -> {
+                    _getUserDataSt.value = GetUserDataState(data = it.data)
+                }
 
-                    is ResultState.Error -> {
-                        _getUserDataSt.value = GetUserDataState(error = it.exception)
-                    }
+                is ResultState.Error -> {
+                    _getUserDataSt.value = GetUserDataState(error = it.exception)
                 }
             }
-        }
-
-
+        }.launchIn(viewModelScope)
     }
 
 
     fun updateUser(userData: userData) {
-
-        viewModelScope.launch {
-            UpdateUser.updateUserByIdUseCase(userData).collectLatest{
-                when(it){
-                    is ResultState.Loading -> {
-                        _updateDataSt.value = UpdateDataState(isLoading = true)
-                    }
-                    is ResultState.Success -> {
-                        _updateDataSt.value = UpdateDataState(data = it.data)
-                    }
-                    is ResultState.Error -> {
-                        _updateDataSt.value = UpdateDataState(error = it.exception)
-                    }
-
+        UpdateUser.updateUserByIdUseCase(userData).onEach {
+            when(it){
+                is ResultState.Loading -> {
+                    _updateDataSt.value = UpdateDataState(isLoading = true)
+                }
+                is ResultState.Success -> {
+                    _updateDataSt.value = UpdateDataState(data = it.data)
+                }
+                is ResultState.Error -> {
+                    _updateDataSt.value = UpdateDataState(error = it.exception)
                 }
 
             }
-        }
+        }.launchIn(viewModelScope)
     }
 
     fun getProductById(productId: String) {
-        viewModelScope.launch (Dispatchers.IO){
-            GetProductById.getProductByIdUseCase(productId).collect  {
-                when (it) {
-                    is ResultState.Loading -> {
-                        _getProductByIdSt.value  = GetProductByIdState(isLoading = true)
-                    }
-                    is ResultState.Success -> {
-                        _getProductByIdSt.value = GetProductByIdState(data = it.data)
-                    }
-                    is ResultState.Error -> {
-                        _getProductByIdSt.value = GetProductByIdState(error = it.exception)
-                    }
-
-
+        GetProductById.getProductByIdUseCase(productId).onEach {
+            when (it) {
+                is ResultState.Loading -> {
+                    _getProductByIdSt.value  = GetProductByIdState(isLoading = true)
+                }
+                is ResultState.Success -> {
+                    _getProductByIdSt.value = GetProductByIdState(data = it.data)
+                }
+                is ResultState.Error -> {
+                    _getProductByIdSt.value = GetProductByIdState(error = it.exception)
                 }
             }
-        }
+        }.launchIn(viewModelScope)
     }
 
     fun setCartItem(cartItemModel: cartItemModel) {
-        viewModelScope.launch {
-            SetCartItem.setCartItemUseCase(cartItemModel).collectLatest {
-                when (it) {
-                    is ResultState.Loading -> {
-                        _setCartItemSt.value = SetCartItemState(isLoading = true)
-                    }
-
-                    is ResultState.Success -> {
-                        _setCartItemSt.value = SetCartItemState(data = it.data)
-                    }
-
-                    is ResultState.Error -> {
-                        _setCartItemSt.value = SetCartItemState(error = it.exception)
-                    }
-
+        SetCartItem.setCartItemUseCase(cartItemModel).onEach {
+            when (it) {
+                is ResultState.Loading -> {
+                    _setCartItemSt.value = SetCartItemState(isLoading = true)
                 }
+
+                is ResultState.Success -> {
+                    _setCartItemSt.value = SetCartItemState(data = it.data)
+                }
+
+                is ResultState.Error -> {
+                    _setCartItemSt.value = SetCartItemState(error = it.exception)
+                }
+
             }
-        }
+        }.launchIn(viewModelScope)
     }
 
     fun getCartItem(){
-        viewModelScope.launch {
-            GetCartItem.getCartItemUseCase().collectLatest {
-                when(it) {
-                    is ResultState.Loading -> {
-                        _getCartItemSt.value = GetCartItemState(isLoading = true)
-                    }
-
-                    is ResultState.Success -> {
-                        _getCartItemSt.value = GetCartItemState(data = it.data)
-                    }
-
-                    is ResultState.Error -> {
-                        _getCartItemSt.value = GetCartItemState(error = it.exception)
-                    }
+        GetCartItem.getCartItemUseCase().onEach {
+            when(it) {
+                is ResultState.Loading -> {
+                    _getCartItemSt.value = GetCartItemState(isLoading = true)
                 }
 
-            }
+                is ResultState.Success -> {
+                    _getCartItemSt.value = GetCartItemState(data = it.data)
+                }
 
-        }
+                is ResultState.Error -> {
+                    _getCartItemSt.value = GetCartItemState(error = it.exception)
+                }
+            }
+        }.launchIn(viewModelScope)
     }
 
 
     fun deleteCartItem(cartItemModel: cartItemModel){
-        viewModelScope.launch {
-            DeleteCart.deleteCartUseCase(cartItemModel).collectLatest {
+        DeleteCart.deleteCartUseCase(cartItemModel).onEach {
 
-                when(it){
-                    is ResultState.Loading -> {
-                        _deleteCartSt.value = DeleteCartState(isLoading = true)
-                    }
-                    is ResultState.Success -> {
-                        _deleteCartSt.value = DeleteCartState(data = it.data)
-                    }
-                    is ResultState.Error -> {
-                        _deleteCartSt.value = DeleteCartState(error = it.exception)
+            when(it){
+                is ResultState.Loading -> {
+                    _deleteCartSt.value = DeleteCartState(isLoading = true)
+                }
+                is ResultState.Success -> {
+                    _deleteCartSt.value = DeleteCartState(data = it.data)
+                }
+                is ResultState.Error -> {
+                    _deleteCartSt.value = DeleteCartState(error = it.exception)
 
-                    }
                 }
             }
-        }
+        }.launchIn(viewModelScope)
     }
 
     fun setFavItem(favouriteModel: favouriteModel){
-        viewModelScope.launch {
-            SetFavItem.setFavItemUseCase(favouriteModel).collectLatest {
-                when (it) {
-                    is ResultState.Loading -> {
-                        _setFavItemSt.value = SetFavItemState(isLoading = true)
-                    }
-
-                    is ResultState.Success -> {
-                        _setFavItemSt.value = SetFavItemState(data = it.data)
-                    }
-
-                    is ResultState.Error -> {
-                        _setFavItemSt.value = SetFavItemState(error = it.exception)
-                    }
+        SetFavItem.setFavItemUseCase(favouriteModel).onEach {
+            when (it) {
+                is ResultState.Loading -> {
+                    _setFavItemSt.value = SetFavItemState(isLoading = true)
                 }
 
-            }
-        }
+                is ResultState.Success -> {
+                    _setFavItemSt.value = SetFavItemState(data = it.data)
+                }
 
+                is ResultState.Error -> {
+                    _setFavItemSt.value = SetFavItemState(error = it.exception)
+                }
+            }
+        }.launchIn(viewModelScope)
     }
 
     fun getFavItem(){
-        viewModelScope.launch {
-            GetFavItem.getFavItemUseCase().collectLatest {
-                when (it) {
-                    is ResultState.Loading -> {
-                        _getFavItemSt.value = GetFavItemState(isLoading = true)
-                    }
-
-                    is ResultState.Success -> {
-                        _getFavItemSt.value = GetFavItemState(data = it.data)
-                    }
-
-                    is ResultState.Error -> {
-                        _getFavItemSt.value = GetFavItemState(error = it.exception)
-
-                    }
-
-
+        GetFavItem.getFavItemUseCase().onEach {
+            when (it) {
+                is ResultState.Loading -> {
+                    _getFavItemSt.value = GetFavItemState(isLoading = true)
                 }
 
+                is ResultState.Success -> {
+                    _getFavItemSt.value = GetFavItemState(data = it.data)
+                }
 
+                is ResultState.Error -> {
+                    _getFavItemSt.value = GetFavItemState(error = it.exception)
+
+                }
             }
-        }
-
+        }.launchIn(viewModelScope)
     }
 
     fun deleteFavItem(favouriteModel: favouriteModel){
-        viewModelScope.launch {
-            DeleteFav.deleteFavItemUseCase(favouriteModel).collectLatest {
-                when (it) {
-                    is ResultState.Loading -> {
-                        _deleteFavSt.value = DeleteFavState(isLoading = true)
-                    }
-
-                    is ResultState.Success -> {
-                        _deleteFavSt.value = DeleteFavState(data = it.data)
-                    }
-
-                    is ResultState.Error -> {
-                        _deleteFavSt.value = DeleteFavState(error = it.exception)
-                    }
-
+        DeleteFav.deleteFavItemUseCase(favouriteModel).onEach {
+            when (it) {
+                is ResultState.Loading -> {
+                    _deleteFavSt.value = DeleteFavState(isLoading = true)
                 }
+
+                is ResultState.Success -> {
+                    _deleteFavSt.value = DeleteFavState(data = it.data)
+                }
+
+                is ResultState.Error -> {
+                    _deleteFavSt.value = DeleteFavState(error = it.exception)
+                }
+
             }
-
-        }
-
+        }.launchIn(viewModelScope)
     }
 
 
@@ -457,21 +404,19 @@ class MyViewModel @Inject constructor(private val GetAllCategory: GetAllCategory
     }
 
     fun searchProduct(query: String){
-        viewModelScope.launch {
-            SearchProduct.getProductBySearchUseCase(query).collectLatest {
-                when(it){
-                    is ResultState.Loading -> {
-                        _searchProductSt.value = SearchProductState(isLoading = true)
-                    }
-                    is ResultState.Success -> {
-                        _searchProductSt.value = SearchProductState(data = it.data)
-                    }
-                    is ResultState.Error -> {
-                        _searchProductSt.value = SearchProductState(error = it.exception)
-                    }
+        SearchProduct.getProductBySearchUseCase(query).onEach {
+            when(it){
+                is ResultState.Loading -> {
+                    _searchProductSt.value = SearchProductState(isLoading = true)
+                }
+                is ResultState.Success -> {
+                    _searchProductSt.value = SearchProductState(data = it.data)
+                }
+                is ResultState.Error -> {
+                    _searchProductSt.value = SearchProductState(error = it.exception)
                 }
             }
-        }
+        }.launchIn(viewModelScope)
     }
 
 
@@ -579,7 +524,3 @@ data class SearchProductState(
     val error: String ?= null,
     val data:List<ProductModel?> = emptyList()
 )
-
-
-
-

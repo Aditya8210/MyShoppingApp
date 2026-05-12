@@ -3,14 +3,11 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.compose)
-
-    id("kotlin-kapt")
-
-    id("com.google.dagger.hilt.android")
-    kotlin("plugin.serialization") version "2.0.21"
     alias(libs.plugins.google.gms.google.services)
-
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -48,6 +45,11 @@ android {
     }
 }
 
+
+hilt {
+    enableAggregatingTask = true
+}
+
 dependencies {
 
     implementation(libs.androidx.core.ktx)
@@ -61,10 +63,16 @@ dependencies {
     implementation("androidx.compose.material3:material3-window-size-class")
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.google.firebase.functions)
     implementation(libs.googleid)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.messaging)
+    implementation(libs.firebase.functions)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -78,15 +86,12 @@ dependencies {
 
 
     implementation("androidx.compose.material:material-icons-extended:1.7.3")
-    implementation("com.google.dagger:hilt-android:2.51.1")
-    kapt("com.google.dagger:hilt-android-compiler:2.51.1")
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
 
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     implementation("io.coil-kt:coil-compose:2.6.0")
-
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
-
 
     implementation("androidx.navigation:navigation-compose:2.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")

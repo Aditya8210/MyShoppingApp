@@ -6,5 +6,5 @@ import javax.inject.Inject
 
 class SetFavItemUseCase@Inject constructor(private val repo: repo) {
 
-    suspend fun setFavItemUseCase(favouriteModel: favouriteModel) = repo.setFavItem(favouriteModel)
+    fun setFavItemUseCase(favouriteModel: favouriteModel) = repo.setFavItem(favouriteModel)
 }

@@ -6,5 +6,5 @@ import javax.inject.Inject
 
 class SetCartItemUseCase @Inject constructor(private val repo: repo) {
 
-    suspend fun setCartItemUseCase(cartItemModel: cartItemModel) = repo.setCartItem(cartItemModel)
+    fun setCartItemUseCase(cartItemModel: cartItemModel) = repo.setCartItem(cartItemModel)
 }

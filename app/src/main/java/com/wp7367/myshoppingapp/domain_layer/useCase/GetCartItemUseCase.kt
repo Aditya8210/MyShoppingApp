@@ -5,5 +5,5 @@ import javax.inject.Inject
 
 class GetCartItemUseCase @Inject constructor(private val repo: repo) {
 
-    suspend fun getCartItemUseCase () =repo.getCartItem()
+    fun getCartItemUseCase () =repo.getCartItem()
 }

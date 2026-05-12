@@ -10,8 +10,8 @@ import com.wp7367.myshoppingapp.domain_layer.useCase.DeleteAddressUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import javax.inject.Inject
 
 
@@ -34,24 +34,21 @@ class ShippingViewModel @Inject constructor(private val ShippingAddress : Shippi
 
 
     fun shippingAddress(shippingModel: shippingModel) {
+        ShippingAddress.shippingAddressUseCase(shippingModel).onEach {
+            when (it) {
+                is ResultState.Loading -> {
+                    _shippingAddressSt.value = ShippingState(isLoading = true)
+                }
 
-        viewModelScope.launch {
-            ShippingAddress.shippingAddressUseCase(shippingModel).collectLatest {
-                when (it) {
-                    is ResultState.Loading -> {
-                        _shippingAddressSt.value = ShippingState(isLoading = true)
-                    }
+                is ResultState.Success -> {
+                    _shippingAddressSt.value = ShippingState(data = it.data)
+                }
 
-                    is ResultState.Success -> {
-                        _shippingAddressSt.value = ShippingState(data = it.data)
-                    }
-
-                    is ResultState.Error -> {
-                        _shippingAddressSt.value = ShippingState(error = it.exception)
-                    }
+                is ResultState.Error -> {
+                    _shippingAddressSt.value = ShippingState(error = it.exception)
                 }
             }
-        }
+        }.launchIn(viewModelScope)
     }
 
     //  ~ for reset the State After Submit ~
@@ -62,49 +59,41 @@ class ShippingViewModel @Inject constructor(private val ShippingAddress : Shippi
 
 
     fun getShippingDataById() {
-        viewModelScope.launch {
-            GetShippingAddressById.getShippingAddressByIdUseCase().collectLatest {
+        GetShippingAddressById.getShippingAddressByIdUseCase().onEach {
 
-                when (it) {
-                    is ResultState.Loading -> {
-                        _getShippingAdSt.value = GetShippingAddressState(isLoading = true)
-                    }
+            when (it) {
+                is ResultState.Loading -> {
+                    _getShippingAdSt.value = GetShippingAddressState(isLoading = true)
+                }
 
-                    is ResultState.Success -> {
-                        _getShippingAdSt.value = GetShippingAddressState(data = it.data)
+                is ResultState.Success -> {
+                    _getShippingAdSt.value = GetShippingAddressState(data = it.data)
 
-                    }
+                }
 
-                    is ResultState.Error -> {
-                        _getShippingAdSt.value = GetShippingAddressState(error = it.exception)
-                    }
+                is ResultState.Error -> {
+                    _getShippingAdSt.value = GetShippingAddressState(error = it.exception)
                 }
             }
-        }
+        }.launchIn(viewModelScope)
     }
 
     fun deleteAddress(shippingModel: shippingModel) {
+        DeleteAddress.deleteAddressUseCase(shippingModel).onEach {
+            when (it) {
+                is ResultState.Loading -> {
+                    _deleteAddressSt.value = DeleteAddressState(isLoading = true)
+                }
 
-        viewModelScope.launch {
-            DeleteAddress.deleteAddressUseCase(shippingModel).collectLatest {
-                when (it) {
-                    is ResultState.Loading -> {
-                        _deleteAddressSt.value = DeleteAddressState(isLoading = true)
-                    }
+                is ResultState.Success -> {
+                    _deleteAddressSt.value = DeleteAddressState(data = it.data)
+                }
 
-                    is ResultState.Success -> {
-                        _deleteAddressSt.value = DeleteAddressState(data = it.data)
-                    }
-
-                    is ResultState.Error -> {
-                        _deleteAddressSt.value = DeleteAddressState(error = it.exception)
-                    }
+                is ResultState.Error -> {
+                    _deleteAddressSt.value = DeleteAddressState(error = it.exception)
                 }
             }
-
-        }
-
-
+        }.launchIn(viewModelScope)
     }
 }
 
