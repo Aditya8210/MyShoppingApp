@@ -54,6 +54,8 @@ interface repo  {
 
   fun showShippingAddressById(): Flow<ResultState<List<shippingModel>>>
 
+  fun selectAddress(shippingModel: shippingModel): Flow<ResultState<String>>
+
   fun orderDataSave(orderList: List<orderModel>) : Flow<ResultState<String>>
 
   fun getOrderData(): Flow<ResultState<List<orderModel>>>
@@ -63,6 +65,8 @@ interface repo  {
       orderId: String,
       signature: String
   ): Flow<ResultState<String>>
+
+  fun createRazorpayOrder(amount: Double, userId: String): Flow<ResultState<String>>
 
 
 

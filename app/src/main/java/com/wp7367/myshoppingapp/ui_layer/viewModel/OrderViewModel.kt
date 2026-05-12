@@ -17,11 +17,15 @@ import javax.inject.Inject
 @HiltViewModel
 class OrderViewModel @Inject constructor(private val OrderSave: OrderDetailUseCase,
                                          private val GetAllOrder: GetAllOrderUseCase,
+                                         private val CreateRazorpayOrder: com.wp7367.myshoppingapp.domain_layer.useCase.CreateRazorpayOrderUseCase,
                                          private val repo: repo
                                          ): ViewModel() {
 
     private val _orderState = MutableStateFlow(OrderState())
     val orderState = _orderState.asStateFlow()
+
+    private val _createOrderState = MutableStateFlow(CreateOrderState())
+    val createOrderState = _createOrderState.asStateFlow()
 
     private val _verificationState = MutableStateFlow<ResultState<String>>(ResultState.Loading)
     val verificationState = _verificationState.asStateFlow()
@@ -34,6 +38,26 @@ class OrderViewModel @Inject constructor(private val OrderSave: OrderDetailUseCa
     val paymentState = _paymentState.asStateFlow()
 
 
+
+    fun createRazorpayOrder(amount: Double, userId: String) {
+        CreateRazorpayOrder.createRazorpayOrder(amount, userId).onEach {
+            when (it) {
+                is ResultState.Loading -> {
+                    _createOrderState.value = CreateOrderState(isLoading = true)
+                }
+                is ResultState.Success -> {
+                    _createOrderState.value = CreateOrderState(orderId = it.data)
+                }
+                is ResultState.Error -> {
+                    _createOrderState.value = CreateOrderState(error = it.exception)
+                }
+            }
+        }.launchIn(viewModelScope)
+    }
+
+    fun clearCreateOrderState() {
+        _createOrderState.value = CreateOrderState()
+    }
 
     fun orderDataSave(orderList: List<orderModel>){
         OrderSave.orderDetailUseCase(orderList).onEach {
@@ -117,6 +141,12 @@ class OrderViewModel @Inject constructor(private val OrderSave: OrderDetailUseCa
 
 
 }
+
+data class CreateOrderState(
+    val isLoading: Boolean = false,
+    val orderId: String = "",
+    val error: String = ""
+)
 
 data class OrderState(
     val isLoading : Boolean = false,

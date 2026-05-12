@@ -1,12 +1,13 @@
 package com.wp7367.myshoppingapp
-import android.app.Activity
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import com.google.firebase.auth.FirebaseAuth
@@ -34,7 +35,9 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
         setContent {
             MyShoppingAppTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    AppNav(firebaseAuth)
+                    Box(modifier = Modifier.padding(innerPadding)) {
+                        AppNav(firebaseAuth)
+                    }
                 }
             }
         }
@@ -47,20 +50,22 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
         name: String,
         email: String,
         contact: String,
+        razorpayOrderId: String = "",
         description: String = "Purchase from MyShoppingApp"
     ) {
         val co = Checkout()
-        // The key is ideally picked from the Manifest, but you can set it here if needed.
-        // co.setKeyID("YOUR_RAZORPAY_KEY")
-
         try {
             val options = JSONObject()
             options.put("name", name)
             options.put("description", description)
-            options.put("image", "https://s3.amazonaws.com/rzp-mobile/images/rzp.png") // Razorpay logo or your app logo
+            options.put("image", "https://s3.amazonaws.com/rzp-mobile/images/rzp.png")
             options.put("theme.color", "#3399cc")
             options.put("currency", "INR")
-            options.put("amount", amount) // amount in paise
+            options.put("amount", amount)
+
+            if (razorpayOrderId.isNotEmpty()) {
+                options.put("order_id", razorpayOrderId)
+            }
 
             val retryObj = JSONObject()
             retryObj.put("enabled", true)

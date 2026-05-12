@@ -2,13 +2,18 @@ package com.wp7367.myshoppingapp.ui_layer.screens.others
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.LocationOff
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.LocationOn
@@ -35,6 +40,7 @@ import com.wp7367.myshoppingapp.ui_layer.viewModel.ShippingViewModel
 fun AddressScreen(navController: NavController, shippingViewModel: ShippingViewModel = hiltViewModel()) {
     val addressState by shippingViewModel.getShippingAd.collectAsStateWithLifecycle()
     val deleteAddressSt by shippingViewModel.deleteAddressSt.collectAsStateWithLifecycle()
+    val selectAddressSt by shippingViewModel.selectAddressSt.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
@@ -44,7 +50,14 @@ fun AddressScreen(navController: NavController, shippingViewModel: ShippingViewM
     LaunchedEffect(deleteAddressSt) {
         if (deleteAddressSt.data != null) {
             Toast.makeText(context, "Address Deleted", Toast.LENGTH_SHORT).show()
-            shippingViewModel.getShippingDataById()
+        }
+    }
+
+    LaunchedEffect(selectAddressSt) {
+        if (selectAddressSt.data != null) {
+            Toast.makeText(context, "Address Selected", Toast.LENGTH_SHORT).show()
+            shippingViewModel.resetSelectAddressState()
+            navController.popBackStack()
         }
     }
 
@@ -61,17 +74,15 @@ fun AddressScreen(navController: NavController, shippingViewModel: ShippingViewM
             )
         },
         floatingActionButton = {
-            if (addressState.data.isEmpty() && !addressState.isLoading) {
-                ExtendedFloatingActionButton(
-                    onClick = { navController.navigate(Routes.EditAddressScreen) },
-                    containerColor = Color(0xFFE57373),
-                    contentColor = Color.White,
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Add New Address")
-                }
+            ExtendedFloatingActionButton(
+                onClick = { navController.navigate(Routes.EditAddressScreen()) },
+                containerColor = Color(0xFFE57373),
+                contentColor = Color.White,
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Add New Address")
             }
         }
     ) { innerPadding ->
@@ -91,22 +102,30 @@ fun AddressScreen(navController: NavController, shippingViewModel: ShippingViewM
                     EmptyAddressState(navController)
                 }
                 else -> {
-                    Column(
+                    LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(16.dp)
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Text(
-                            text = "Default Address",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = Color.Gray,
-                            modifier = Modifier.padding(bottom = 12.dp)
-                        )
-                        AddressCard(
-                            shippingAddress = addressState.data.first(),
-                            navController = navController,
-                            viewModel = shippingViewModel
-                        )
+                        item {
+                            Text(
+                                text = "Shipping Addresses",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = Color.Gray,
+                                modifier = Modifier.padding(bottom = 4.dp)
+                            )
+                        }
+                        items(addressState.data) { address ->
+                            AddressCard(
+                                shippingAddress = address,
+                                navController = navController,
+                                viewModel = shippingViewModel
+                            )
+                        }
+                        item { 
+                            Spacer(modifier = Modifier.height(80.dp))
+                        }
                     }
                 }
             }
@@ -120,11 +139,20 @@ fun AddressCard(
     navController: NavController,
     viewModel: ShippingViewModel
 ) {
+    val isSelected = shippingAddress.selected
+    
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { viewModel.selectAddress(shippingAddress) }
+            .border(
+                width = if (isSelected) 2.dp else 0.dp,
+                color = if (isSelected) Color(0xFFE57373) else Color.Transparent,
+                shape = RoundedCornerShape(20.dp)
+            ),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 4.dp else 2.dp)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Row(
@@ -136,28 +164,31 @@ fun AddressCard(
                     Surface(
                         modifier = Modifier.size(40.dp),
                         shape = CircleShape,
-                        color = Color(0xFFE57373).copy(alpha = 0.1f)
+                        color = (if (isSelected) Color(0xFFE57373) else Color.Gray).copy(alpha = 0.1f)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                Icons.Rounded.LocationOn,
+                                if (isSelected) Icons.Rounded.CheckCircle else Icons.Rounded.LocationOn,
                                 contentDescription = null,
-                                tint = Color(0xFFE57373),
+                                tint = if (isSelected) Color(0xFFE57373) else Color.Gray,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = "Home Address",
+                        text = if (isSelected) "Selected Address" else "Shipping Address",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = if (isSelected) Color(0xFFE57373) else Color.Black
                     )
                 }
                 
                 Row {
                     IconButton(
-                        onClick = { navController.navigate(Routes.EditAddressScreen) },
+                        onClick = { 
+                            navController.navigate(Routes.EditAddressScreen(addressId = shippingAddress.addressId))
+                        },
                         modifier = Modifier.size(32.dp)
                     ) {
                         Icon(
@@ -261,7 +292,7 @@ fun EmptyAddressState(navController: NavController) {
             )
             Spacer(modifier = Modifier.height(32.dp))
             Button(
-                onClick = { navController.navigate(Routes.EditAddressScreen) },
+                onClick = { navController.navigate(Routes.EditAddressScreen()) },
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
             ) {

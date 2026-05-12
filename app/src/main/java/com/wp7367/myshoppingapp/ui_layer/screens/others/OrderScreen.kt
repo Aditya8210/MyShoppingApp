@@ -1,7 +1,7 @@
 package com.wp7367.myshoppingapp.ui_layer.screens.others
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -12,7 +12,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,7 +19,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -42,11 +40,24 @@ fun OrderScreen(navController: NavController, orderViewmodel: OrderViewModel) {
     val tabs = listOf("All", "Pending", "Paid", "Delivered")
     
     var showSheet by remember { mutableStateOf(false) }
-    var selectedOrder by remember { mutableStateOf<orderModel?>(null) }
+    var selectedOrderGroup by remember { mutableStateOf<List<orderModel>>(emptyList()) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     LaunchedEffect(Unit) {
         orderViewmodel.getAllOrderState()
+    }
+
+    // Industry level grouping: Group items by orderId
+    val groupedOrders = remember(selectedTab, getAllOrderState.data) {
+        val baseData = if (selectedTab == 0) getAllOrderState.data
+        else getAllOrderState.data.filter { 
+            it.status.equals(tabs[selectedTab], ignoreCase = true) 
+        }
+        
+        baseData.groupBy { it.orderId }
+            .values
+            .toList()
+            .sortedByDescending { it.firstOrNull()?.date ?: 0L }
     }
 
     Scaffold(
@@ -95,34 +106,23 @@ fun OrderScreen(navController: NavController, orderViewmodel: OrderViewModel) {
                 getAllOrderState.error.isNotEmpty() -> {
                     EmptyOrderState(message = "Something went wrong: ${getAllOrderState.error}")
                 }
-                getAllOrderState.data.isEmpty() -> {
-                    EmptyOrderState(message = "No orders placed yet.")
+                groupedOrders.isEmpty() -> {
+                    EmptyOrderState(message = if(selectedTab == 0) "No orders placed yet." else "No ${tabs[selectedTab]} orders found.")
                 }
                 else -> {
-                    val filteredOrders = remember(selectedTab, getAllOrderState.data) {
-                        if (selectedTab == 0) getAllOrderState.data
-                        else getAllOrderState.data.filter { 
-                            it.status.equals(tabs[selectedTab], ignoreCase = true) 
-                        }
-                    }
-
-                    if (filteredOrders.isEmpty()) {
-                        EmptyOrderState(message = "No ${tabs[selectedTab]} orders found.")
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            items(filteredOrders) { order ->
-                                OrderCard(
-                                    order = order,
-                                    onViewDetails = {
-                                        selectedOrder = order
-                                        showSheet = true
-                                    }
-                                )
-                            }
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        items(groupedOrders) { orderGroup ->
+                            OrderCard(
+                                orderGroup = orderGroup,
+                                onViewDetails = {
+                                    selectedOrderGroup = orderGroup
+                                    showSheet = true
+                                }
+                            )
                         }
                     }
                 }
@@ -130,20 +130,24 @@ fun OrderScreen(navController: NavController, orderViewmodel: OrderViewModel) {
         }
     }
 
-    if (showSheet && selectedOrder != null) {
+    if (showSheet && selectedOrderGroup.isNotEmpty()) {
         ModalBottomSheet(
             onDismissRequest = { showSheet = false },
             sheetState = sheetState,
             containerColor = Color.White,
             dragHandle = { BottomSheetDefaults.DragHandle() }
         ) {
-            OrderDetailContent(order = selectedOrder!!)
+            OrderDetailContent(orderGroup = selectedOrderGroup)
         }
     }
 }
 
 @Composable
-fun OrderCard(order: orderModel, onViewDetails: () -> Unit) {
+fun OrderCard(orderGroup: List<orderModel>, onViewDetails: () -> Unit) {
+    val firstItem = orderGroup.first()
+    val totalAmount = orderGroup.sumOf { it.productFinalPrice.toDoubleOrNull() ?: 0.0 }
+    val totalQty = orderGroup.sumOf { it.productQty.toIntOrNull() ?: 0 }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -156,46 +160,70 @@ fun OrderCard(order: orderModel, onViewDetails: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = formatDate(order.date),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
-                )
-                StatusBadge(status = order.status)
+                Column {
+                    Text(
+                        text = "Order #${firstItem.orderId.takeLast(8).uppercase()}",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = formatDate(firstItem.date),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
+                }
+                StatusBadge(status = firstItem.status)
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                AsyncImage(
-                    model = order.productImageUrl,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(70.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFFF3F3F3)),
-                    contentScale = ContentScale.Crop
-                )
+                Box(modifier = Modifier.size(70.dp)) {
+                    AsyncImage(
+                        model = firstItem.productImageUrl,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFFF3F3F3)),
+                        contentScale = ContentScale.Crop
+                    )
+                    if (orderGroup.size > 1) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(12.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "+${orderGroup.size - 1}",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
+                    }
+                }
                 
                 Spacer(modifier = Modifier.width(16.dp))
                 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = order.productName,
+                        text = if (orderGroup.size > 1) "${firstItem.productName} & ${orderGroup.size - 1} more" else firstItem.productName,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "ID: #${order.orderId.takeLast(8)}",
+                        text = "Total Items: $totalQty",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray
                     )
                     Text(
-                        text = "₹${order.productFinalPrice}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
+                        text = "₹${"%.2f".format(totalAmount)}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -203,7 +231,7 @@ fun OrderCard(order: orderModel, onViewDetails: () -> Unit) {
 
             Spacer(modifier = Modifier.height(12.dp))
             HorizontalDivider(color = Color(0xFFEEEEEE))
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -221,25 +249,69 @@ fun OrderCard(order: orderModel, onViewDetails: () -> Unit) {
 }
 
 @Composable
-fun OrderDetailContent(order: orderModel) {
+fun OrderDetailContent(orderGroup: List<orderModel>) {
+    val firstItem = orderGroup.first()
+    val totalAmount = orderGroup.sumOf { it.productFinalPrice.toDoubleOrNull() ?: 0.0 }
+    
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .verticalScroll(androidx.compose.foundation.rememberScrollState())
+            .verticalScroll(rememberScrollState())
             .padding(16.dp)
-            .padding(bottom = 32.dp)
     ) {
-        Text(
-            text = "Delivery Status",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
-        )
-        
+        // --- Order Header ---
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    text = "Order ID",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.Gray
+                )
+                Text(
+                    text = "#${firstItem.orderId.uppercase()}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            StatusBadge(status = firstItem.status)
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+        HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Professional Timeline
+        // --- Items Section ---
+        Text(
+            text = "Ordered Items (${orderGroup.size})",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            orderGroup.forEach { item ->
+                OrderItemDetail(item = item)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+        HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // --- Delivery Timeline ---
+        Text(
+            text = "Order Tracking",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+
         val statuses = listOf("Ordered", "Processing", "Shipped", "Delivered")
-        val currentStatusIndex = when (order.status.lowercase()) {
+        val currentStatusIndex = when (firstItem.status.lowercase()) {
             "pending" -> 0
             "processing" -> 1
             "shipped" -> 2
@@ -250,61 +322,191 @@ fun OrderDetailContent(order: orderModel) {
         statuses.forEachIndexed { index, status ->
             TimelineItem(
                 title = status,
-                subtitle = if (index <= currentStatusIndex) "Task completed" else "Pending",
+                subtitle = when {
+                    index < currentStatusIndex -> "Completed"
+                    index == currentStatusIndex -> "Current Status"
+                    else -> "Pending"
+                },
                 isCompleted = index <= currentStatusIndex,
                 isLast = index == statuses.size - 1
             )
         }
 
         Spacer(modifier = Modifier.height(24.dp))
-        HorizontalDivider(color = Color(0xFFEEEEEE))
+        HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Order Details Section
-        DetailRow(label = "Transaction Method", value = order.transactionMethod)
-        DetailRow(label = "Transaction ID", value = if(order.transactionId.isEmpty()) "N/A" else order.transactionId)
-        DetailRow(label = "Full Name", value = order.fullName)
-        DetailRow(label = "Contact", value = order.contactNumber)
-        
-        Spacer(modifier = Modifier.height(16.dp))
+        // --- Shipping & Payment Info ---
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Shipping Address",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = firstItem.fullName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = firstItem.address,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray,
+                    lineHeight = 16.sp
+                )
+                Text(
+                    text = "Phone: ${firstItem.contactNumber}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
         
         Text(
-            text = "Shipping Address",
+            text = "Payment Information",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        DetailRow(label = "Method", value = firstItem.transactionMethod)
+        DetailRow(
+            label = "Transaction ID", 
+            value = firstItem.transactionId.ifEmpty { "N/A" }
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+        HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray.copy(alpha = 0.5f))
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // --- Bill Summary ---
+        Text(
+            text = "Bill Summary",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
-        Text(
-            text = order.address,
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color.Gray,
-            modifier = Modifier.padding(top = 4.dp)
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(12.dp))
         
-        // Summary Card
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8F8))
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8F8)),
+            shape = RoundedCornerShape(12.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Item Total")
-                    Text("₹${order.productFinalPrice}")
-                }
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Delivery Fee")
-                    Text("Free", color = Color(0xFF2E7D32))
-                }
-                Spacer(modifier = Modifier.height(8.dp))
+                BillDetailRow(label = "Items Total", value = "₹${"%.2f".format(totalAmount)}")
+                BillDetailRow(label = "Delivery Charges", value = "FREE", valueColor = Color(0xFF2E7D32))
+                BillDetailRow(label = "Discount", value = "- ₹0.00", valueColor = Color(0xFF2E7D32))
+                
+                Spacer(modifier = Modifier.height(12.dp))
                 HorizontalDivider()
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Grand Total", fontWeight = FontWeight.Bold)
-                    Text("₹${order.productFinalPrice}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Total Paid",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "₹${"%.2f".format(totalAmount)}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
         }
+        
+        Spacer(modifier = Modifier.height(32.dp))
+    }
+}
+
+@Composable
+fun OrderItemDetail(item: orderModel) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFFF9F9F9), RoundedCornerShape(12.dp))
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AsyncImage(
+            model = item.productImageUrl,
+            contentDescription = null,
+            modifier = Modifier
+                .size(60.dp)
+                .clip(RoundedCornerShape(8.dp)),
+            contentScale = ContentScale.Crop
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = item.productName,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "Qty: ${item.productQty}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
+                if (item.size.isNotEmpty()) {
+                    Text(
+                        text = " | Size: ${item.size}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
+                }
+                if (item.color.isNotEmpty()) {
+                    Text(
+                        text = " | ",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .clip(CircleShape)
+                            .background(parseColor(item.color))
+                            .border(0.5.dp, Color.LightGray, CircleShape)
+                    )
+                }
+            }
+            Text(
+                text = "₹${item.productFinalPrice}",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+@Composable
+fun BillDetailRow(label: String, value: String, valueColor: Color = Color.Black) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(text = label, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+        Text(
+            text = value, 
+            style = MaterialTheme.typography.bodyMedium, 
+            fontWeight = FontWeight.Bold,
+            color = valueColor
+        )
     }
 }
 

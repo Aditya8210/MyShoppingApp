@@ -47,7 +47,7 @@ sealed class Routes {
 
 
     @Serializable
-    object EditAddressScreen
+    data class EditAddressScreen(val addressId: String? = null)
 
     @Serializable
     object SeeAllProduct

@@ -7,6 +7,7 @@ import com.wp7367.myshoppingapp.domain_layer.useCase.GetShippingAddressByIdUseCa
 import com.wp7367.myshoppingapp.domain_layer.useCase.ShippingAddressUseCase
 import com.wp7367.myshoppingapp.domain_layer.models.shippingModel
 import com.wp7367.myshoppingapp.domain_layer.useCase.DeleteAddressUseCase
+import com.wp7367.myshoppingapp.domain_layer.useCase.SelectAddressUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,11 +17,12 @@ import javax.inject.Inject
 
 
 @HiltViewModel
-class ShippingViewModel @Inject constructor(private val ShippingAddress : ShippingAddressUseCase,
-                                            private val GetShippingAddressById : GetShippingAddressByIdUseCase,
-                                            private val DeleteAddress : DeleteAddressUseCase,
-
-    ) : ViewModel() {
+class ShippingViewModel @Inject constructor(
+    private val ShippingAddress: ShippingAddressUseCase,
+    private val GetShippingAddressById: GetShippingAddressByIdUseCase,
+    private val DeleteAddress: DeleteAddressUseCase,
+    private val SelectAddress: SelectAddressUseCase
+) : ViewModel() {
 
 
     private val _shippingAddressSt = MutableStateFlow(ShippingState())
@@ -31,6 +33,9 @@ class ShippingViewModel @Inject constructor(private val ShippingAddress : Shippi
 
     private val _deleteAddressSt = MutableStateFlow(DeleteAddressState())
     val deleteAddressSt = _deleteAddressSt.asStateFlow()
+
+    private val _selectAddressSt = MutableStateFlow(SelectAddressState())
+    val selectAddressSt = _selectAddressSt.asStateFlow()
 
 
     fun shippingAddress(shippingModel: shippingModel) {
@@ -95,13 +100,33 @@ class ShippingViewModel @Inject constructor(private val ShippingAddress : Shippi
             }
         }.launchIn(viewModelScope)
     }
+
+    fun selectAddress(shippingModel: shippingModel) {
+        SelectAddress.selectAddressUseCase(shippingModel).onEach {
+            when (it) {
+                is ResultState.Loading -> {
+                    _selectAddressSt.value = SelectAddressState(isLoading = true)
+                }
+                is ResultState.Success -> {
+                    _selectAddressSt.value = SelectAddressState(data = it.data)
+                }
+                is ResultState.Error -> {
+                    _selectAddressSt.value = SelectAddressState(error = it.exception)
+                }
+            }
+        }.launchIn(viewModelScope)
+    }
+
+    fun resetSelectAddressState() {
+        _selectAddressSt.value = SelectAddressState()
+    }
 }
 
 
 data class ShippingState(
     val isLoading: Boolean = false,
-    val error: String ?= null,
-    val data:String? = null
+    val error: String? = null,
+    val data: String? = null
 )
 
 data class GetShippingAddressState(
@@ -117,6 +142,12 @@ data class GetShippingAddressState(
 data class DeleteAddressState(
 
     val isLoading: Boolean = false,
-    val error: String ?= null,
-    val data:String? = null,
+    val error: String? = null,
+    val data: String? = null,
+)
+
+data class SelectAddressState(
+    val isLoading: Boolean = false,
+    val error: String? = null,
+    val data: String? = null,
 )

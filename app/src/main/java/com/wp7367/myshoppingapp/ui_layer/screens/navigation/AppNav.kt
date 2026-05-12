@@ -179,7 +179,8 @@ fun AppNav(firebaseAuth: FirebaseAuth){
                 
                 composable <Routes.EditAddressScreen>
                 {
-                    EditAddressScreen(navController = navController, viewModel = hiltViewModel())
+                    val data = it.toRoute<Routes.EditAddressScreen>()
+                    EditAddressScreen(navController = navController, addressId = data.addressId)
                 }
 
                 composable <Routes.SeeAllProduct>

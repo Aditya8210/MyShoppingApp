@@ -25,11 +25,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Payment
-import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -92,10 +92,10 @@ fun CheckOutScreenUi(
     val context = LocalContext.current
 
     // ~~ Step 6 ~~ Razorpay
-    val activity = context.findActivity() as? MainActivity
-
-
-
+    val activity = context.findActivity()
+    
+    
+    
     val orderViewModel: OrderViewModel = hiltViewModel(activity ?: (context as ComponentActivity))
 
     val productState by viewModel.getProductById.collectAsStateWithLifecycle()
@@ -103,10 +103,17 @@ fun CheckOutScreenUi(
     val addressDataState by shippingViewmodel.getShippingAd.collectAsStateWithLifecycle()
     val orderState by orderViewModel.orderState.collectAsStateWithLifecycle()
     val paymentState by orderViewModel.paymentState.collectAsStateWithLifecycle()
+    val createOrderState by orderViewModel.createOrderState.collectAsStateWithLifecycle()
+
+    val currentSelectedAddress = remember(addressDataState.data) {
+        addressDataState.data.find { it.selected } ?: addressDataState.data.firstOrNull() ?: shippingModel()
+    }
 
     val productData = productState.data
     val cartData = cartState.data
-    val isLoading = if (productId != null) productState.isLoading else cartState.isLoading
+    val isLoading = (if (productId != null) productState.isLoading else cartState.isLoading) || 
+                    createOrderState.isLoading || 
+                    orderState.isLoading
     val error = if (productId != null) productState.error else cartState.error
 
     var selectedPaymentMethod by remember { mutableStateOf("Online payment") }
@@ -114,29 +121,33 @@ fun CheckOutScreenUi(
 
     val scrollState = rememberScrollState()
 
-    LaunchedEffect(key1 = productId) {
+    LaunchedEffect(productId) {
         if (productId != null) {
             viewModel.getProductById(productId)
         } else {
             viewModel.getCartItem()
         }
+    }
+
+    LaunchedEffect(Unit) {
         shippingViewmodel.getShippingDataById()
     }
 
     LaunchedEffect(paymentState) {
         if (paymentState.paymentId.isNotEmpty()) {
-            val shippingAddress = addressDataState.data.firstOrNull()
+            val shippingAddress = currentSelectedAddress
             val userEmail = FirebaseAuth.getInstance().currentUser?.email ?: ""
 
-            if (shippingAddress != null) {
+            if (shippingAddress.fullName.isNotEmpty()) {
                 val orderList = if (productId != null && productData != null) {
+                    val totalPrice = (productData.finalPrice.toDoubleOrNull() ?: 0.0) * quantity
                     listOf(
                         orderModel(
                             productId = productData.productId,
                             productName = productData.name,
                             productDescription = productData.description,
                             productQty = quantity.toString(),
-                            productFinalPrice = productData.finalPrice,
+                            productFinalPrice = "%.2f".format(totalPrice),
                             productCategory = productData.category,
                             productImageUrl = productData.image,
                             color = color,
@@ -185,6 +196,14 @@ fun CheckOutScreenUi(
         }
     }
 
+    val primaryItemName: String = remember(productId, productData, cartData) {
+        if (productId != null) {
+            productData?.name ?: "Product"
+        } else {
+            cartData.firstOrNull()?.name ?: "Your Order"
+        }
+    }
+
     val currentTotalAmount: Double = remember(productId, productData, cartData, quantity) {
         if (productId != null) {
             (productData?.finalPrice?.toDoubleOrNull() ?: 0.0) * quantity
@@ -195,11 +214,22 @@ fun CheckOutScreenUi(
         }
     }
 
-    val primaryItemName: String = remember(productId, productData, cartData) {
-        if (productId != null) {
-            productData?.name ?: "Product"
-        } else {
-            cartData.firstOrNull()?.name ?: "Your Order"
+    LaunchedEffect(createOrderState) {
+        if (createOrderState.orderId.isNotEmpty()) {
+            val shippingAddress = currentSelectedAddress
+            val userEmail = FirebaseAuth.getInstance().currentUser?.email ?: ""
+            (activity as? MainActivity)?.startPayment(
+                amount = (currentTotalAmount * 100).toInt(),
+                name = primaryItemName,
+                email = userEmail,
+                contact = shippingAddress.contactNumber,
+                razorpayOrderId = createOrderState.orderId,
+                description = "Order for $primaryItemName"
+            )
+            orderViewModel.clearCreateOrderState()
+        } else if (createOrderState.error.isNotEmpty()) {
+            Toast.makeText(context, createOrderState.error, Toast.LENGTH_SHORT).show()
+            orderViewModel.clearCreateOrderState()
         }
     }
 
@@ -267,8 +297,8 @@ fun CheckOutScreenUi(
                                 }
                                 Button(
                                     onClick = {
-                                        val shippingAddress = addressDataState.data.firstOrNull()
-                                        if (shippingAddress == null || shippingAddress.fullName.isEmpty()) {
+                                        val shippingAddress = currentSelectedAddress
+                                        if (shippingAddress.fullName.isEmpty()) {
                                             Toast.makeText(context, "Please add a shipping address", Toast.LENGTH_SHORT).show()
                                             return@Button
                                         }
@@ -279,24 +309,19 @@ fun CheckOutScreenUi(
                                         }
 
                                         if (selectedPaymentMethod == "Online payment") {
-                                            val userEmail = FirebaseAuth.getInstance().currentUser?.email ?: ""
-                                            activity?.startPayment(
-                                                amount = (currentTotalAmount * 100).toInt(),
-                                                name = primaryItemName,
-                                                email = userEmail,
-                                                contact = shippingAddress.contactNumber,
-                                                description = "Order for $primaryItemName"
-                                            )
+                                            val userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+                                            orderViewModel.createRazorpayOrder(currentTotalAmount, userId)
                                         } else {
                                             val userEmail = FirebaseAuth.getInstance().currentUser?.email ?: ""
                                             val orderList = if (productId != null && productData != null) {
+                                                val totalPrice = (productData.finalPrice.toDoubleOrNull() ?: 0.0) * quantity
                                                 listOf(
                                                     orderModel(
                                                         productId = productData.productId,
                                                         productName = productData.name,
                                                         productDescription = productData.description,
                                                         productQty = quantity.toString(),
-                                                        productFinalPrice = productData.finalPrice,
+                                                        productFinalPrice = "%.2f".format(totalPrice),
                                                         productCategory = productData.category,
                                                         productImageUrl = productData.image,
                                                         color = color,
@@ -342,11 +367,11 @@ fun CheckOutScreenUi(
 
                     SectionHeader(title = "Shipping Address", icon = Icons.Default.LocationOn)
                     AddressScreen(
-                        shippingAddress = addressDataState.data.firstOrNull() ?: shippingModel(),
+                        shippingAddress = currentSelectedAddress,
                         navController
                     )
 
-                    SectionHeader(title = "Order Items", icon = Icons.Default.ReceiptLong)
+                    SectionHeader(title = "Order Items", icon = Icons.AutoMirrored.Filled.ReceiptLong)
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -373,7 +398,7 @@ fun CheckOutScreenUi(
                         amount = currentTotalAmount
                     )
 
-                    SectionHeader(title = "Bill Details", icon = Icons.Default.ReceiptLong)
+                    SectionHeader(title = "Bill Details", icon = Icons.AutoMirrored.Filled.ReceiptLong)
                     BillDetailsSection(totalAmount = currentTotalAmount)
 
                     Spacer(modifier = Modifier.height(24.dp))
@@ -529,11 +554,12 @@ fun createOrderListFromCart(
     paymentMethod: String
 ): List<orderModel> {
     return cartList.map { cartItem ->
+        val totalPrice = (cartItem.price.toDoubleOrNull() ?: 0.0) * cartItem.quantity
         orderModel(
             productId = cartItem.productId,
             productName = cartItem.name,
             productQty = cartItem.quantity.toString(),
-            productFinalPrice = cartItem.price,
+            productFinalPrice = "%.2f".format(totalPrice),
             productCategory = "", // Category info isn't in cartItemModel, could be added if needed
             productImageUrl = cartItem.imageUrl,
             color = cartItem.color,
@@ -605,7 +631,7 @@ fun GetCartItem(cardItem: cartItemModel) {
                     }
                 }
                 Text(
-                    "₹${cardItem.price}",
+                    "₹${"%.2f".format((cardItem.price.toDoubleOrNull() ?: 0.0) * cardItem.quantity)}",
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.ExtraBold),
                     color = Color(0xFFE57373)
                 )
@@ -681,7 +707,7 @@ fun ProductItem(productItem: ProductModel, quantity: Int = 1, size: String = "",
                     color = Color.Gray
                 )
                 Text(
-                    "₹${productItem.finalPrice}",
+                    "₹${"%.2f".format((productItem.finalPrice.toDoubleOrNull() ?: 0.0) * quantity)}",
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.ExtraBold),
                     color = Color(0xFFE57373)
                 )
@@ -759,7 +785,7 @@ fun AddressScreen(shippingAddress: shippingModel, navController: NavController) 
             }
             
             IconButton(
-                onClick = { navController.navigate(Routes.EditAddressScreen) },
+                onClick = { navController.navigate(Routes.AddressScreen) },
                 modifier = Modifier
                     .size(32.dp)
                     .background(Color(0xFFF5F5F5), CircleShape)

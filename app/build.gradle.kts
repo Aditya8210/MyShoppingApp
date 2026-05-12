@@ -1,4 +1,5 @@
 
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -8,6 +9,12 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.gms.google.services)
     alias(libs.plugins.kotlin.serialization)
+}
+
+val properties = Properties()
+val propertiesFile = rootProject.file("local.properties")
+if (propertiesFile.exists()) {
+    properties.load(propertiesFile.inputStream())
 }
 
 android {
@@ -22,6 +29,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Read Razorpay key from local.properties
+        val razorpayKey = properties.getProperty("RAZORPAY_KEY_ID") ?: ""
+        manifestPlaceholders["RAZORPAY_KEY_ID"] = razorpayKey
+        buildConfigField("String", "RAZORPAY_KEY_ID", "\"$razorpayKey\"")
     }
 
     buildTypes {
@@ -42,6 +54,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -81,10 +94,6 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-
-
-
-
     implementation("androidx.compose.material:material-icons-extended:1.7.3")
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
@@ -96,21 +105,8 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
 
-
-
-
     implementation("com.google.accompanist:accompanist-pager:0.28.0")
     implementation("com.google.accompanist:accompanist-pager-indicators:0.28.0")
 
-    implementation("com.razorpay:checkout:1.6.40")                          // Step - 1
-
-
-
-
-
-
-
-
-
-
+    implementation("com.razorpay:checkout:1.6.41")                          // Step - 1
 }

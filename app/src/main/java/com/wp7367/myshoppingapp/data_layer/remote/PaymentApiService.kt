@@ -10,12 +10,35 @@ data class PaymentVerificationRequest(
 )
 
 data class PaymentVerificationResponse(
-    val status: String,
+    val success: Boolean, // Changed from status: String to match backend
     val message: String? = null
 )
 
+data class PaymentOrderRequest(
+    val amount: Int, // Changed to Int to match backend expectation
+    val userId: String
+)
+
+// Matching the screenshot response structure
+data class PaymentOrderResponse(
+    val success: Boolean,
+    val statusCode: Int,
+    val message: String,
+    val data: OrderData
+)
+
+data class OrderData(
+    val orderId: String,
+    val amount: Int
+)
+
 interface PaymentApiService {
-    @POST("verify") // This assumes your endpoint is /verify
+    @POST("external-order") // Path from screenshot
+    suspend fun createOrder(
+        @Body request: PaymentOrderRequest
+    ): PaymentOrderResponse
+
+    @POST("verify-external")
     suspend fun verifyPayment(
         @Body request: PaymentVerificationRequest
     ): PaymentVerificationResponse

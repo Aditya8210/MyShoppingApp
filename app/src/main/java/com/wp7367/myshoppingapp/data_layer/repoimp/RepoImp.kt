@@ -440,7 +440,6 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
 
     //~ ShippingAddress ~
     override fun shippingAddress(shippingModel: shippingModel): Flow<ResultState<String>> = callbackFlow {
-
         trySend(ResultState.Loading)
         val currentUser = FirebaseAuth.currentUser
         if (currentUser == null) {
@@ -448,16 +447,33 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
             close()
             return@callbackFlow
         }
-        FirebaseFirestore.collection(SHIPPING_DATA)
-            .document(FirebaseAuth.currentUser?.uid.toString()).set(shippingModel)
-            .addOnSuccessListener {
-                trySend(ResultState.Success("Address Saved Successfully"))
-            }.addOnFailureListener {
-                trySend(ResultState.Error(it.message.toString()))
-            }
-        awaitClose {
+        
+        val ref = FirebaseFirestore.collection(SHIPPING_DATA)
+            .document(currentUser.uid)
+            .collection("addresses")
+            
+        ref.get().addOnSuccessListener { snapshot ->
+            val isFirst = snapshot.isEmpty
+            val docRef = if (shippingModel.addressId.isEmpty()) ref.document() else ref.document(shippingModel.addressId)
+            
+            val finalModel = shippingModel.copy(
+                addressId = docRef.id,
+                selected = if (isFirst) true else shippingModel.selected
+            )
+
+            docRef.set(finalModel)
+                .addOnSuccessListener {
+                    trySend(ResultState.Success("Address Saved Successfully"))
+                    close()
+                }.addOnFailureListener {
+                    trySend(ResultState.Error(it.message.toString()))
+                    close()
+                }
+        }.addOnFailureListener {
+            trySend(ResultState.Error(it.message.toString()))
             close()
         }
+        awaitClose { }
     }
 
     //~ DeleteShippingAddress ~
@@ -470,36 +486,84 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
             close()
             return@callbackFlow
         }
-        FirebaseFirestore.collection(SHIPPING_DATA).document(currentUser.uid).delete()
+        FirebaseFirestore.collection(SHIPPING_DATA)
+            .document(currentUser.uid)
+            .collection("addresses")
+            .document(shippingModel.addressId)
+            .delete()
             .addOnSuccessListener {
                 trySend(ResultState.Success("Address Deleted Successfully"))
+                close()
             }.addOnFailureListener {
                 trySend(ResultState.Error(it.message.toString()))
+                close()
             }
-        awaitClose {
-            close()
-        }
+        awaitClose { }
     }
 
     //~ ShowShippingAddressById ~
     override fun showShippingAddressById(): Flow<ResultState<List<shippingModel>>> = callbackFlow {
-
         trySend(ResultState.Loading)
-
-        FirebaseFirestore.collection(SHIPPING_DATA)
-            .document(FirebaseAuth.currentUser?.uid!!).get()
-            .addOnSuccessListener {
-                val shippingData = it.toObject(shippingModel::class.java)
-
-                trySend(ResultState.Success(listOfNotNull(shippingData)))
-            }.addOnFailureListener {
-                trySend(ResultState.Error(it.message.toString()))
-            }
-        awaitClose {
+        val currentUser = FirebaseAuth.currentUser
+        if (currentUser == null) {
+            trySend(ResultState.Error("User not logged in"))
             close()
+            return@callbackFlow
         }
 
+        val listener = FirebaseFirestore.collection(SHIPPING_DATA)
+            .document(currentUser.uid)
+            .collection("addresses")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    trySend(ResultState.Error(error.message.toString()))
+                    return@addSnapshotListener
+                }
+                
+                if (snapshot != null) {
+                    val list = snapshot.documents.mapNotNull { doc ->
+                        doc.toObject(shippingModel::class.java)?.apply { addressId = doc.id }
+                    }
+                    trySend(ResultState.Success(list))
+                }
+            }
 
+        awaitClose {
+            listener.remove()
+        }
+    }
+
+    override fun selectAddress(shippingModel: shippingModel): Flow<ResultState<String>> = callbackFlow {
+        trySend(ResultState.Loading)
+        val currentUser = FirebaseAuth.currentUser
+        if (currentUser == null) {
+            trySend(ResultState.Error("User not logged in"))
+            close()
+            return@callbackFlow
+        }
+
+        val ref = FirebaseFirestore.collection(SHIPPING_DATA)
+            .document(currentUser.uid)
+            .collection("addresses")
+
+        ref.get().addOnSuccessListener { snapshot ->
+            val batch = FirebaseFirestore.batch()
+            snapshot.documents.forEach { doc ->
+                val isSelected = doc.id == shippingModel.addressId
+                batch.update(doc.reference, "selected", isSelected)
+            }
+            batch.commit().addOnSuccessListener {
+                trySend(ResultState.Success("Address Selected"))
+                close()
+            }.addOnFailureListener {
+                trySend(ResultState.Error(it.message.toString()))
+                close()
+            }
+        }.addOnFailureListener {
+            trySend(ResultState.Error(it.message.toString()))
+            close()
+        }
+        awaitClose { }
     }
 
     //~ OrderDataSave ~
@@ -591,6 +655,41 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
         awaitClose { }
     }
 
+    override fun createRazorpayOrder(amount: Double, userId: String): Flow<ResultState<String>> = callbackFlow {
+        trySend(ResultState.Loading)
+        
+        // Log to verify what we are sending
+        android.util.Log.d("OrderCreate", "Requesting Order - Amount: ${amount.toInt()}, UserID: '$userId'")
+
+        val request = com.wp7367.myshoppingapp.data_layer.remote.PaymentOrderRequest(amount.toInt(), userId)
+        val job = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            try {
+                val response = paymentApiService.createOrder(request)
+                if (response.success) {
+                    trySend(ResultState.Success(response.data.orderId))
+                } else {
+                    trySend(ResultState.Error(response.message))
+                }
+            } catch (e: retrofit2.HttpException) {
+                val errorBody = e.response()?.errorBody()?.string()
+                // Parsing the error message from backend if possible
+                val errorMessage = try {
+                    val json = org.json.JSONObject(errorBody ?: "")
+                    json.optString("message", "Validation Error (422)")
+                } catch (_: Exception) {
+                    "Server Error: ${e.code()}"
+                }
+                android.util.Log.e("OrderCreate", "HTTP Error: ${e.code()} - $errorBody")
+                trySend(ResultState.Error(errorMessage))
+            } catch (e: Exception) {
+                trySend(ResultState.Error(e.message ?: "Network error"))
+            } finally {
+                close()
+            }
+        }
+        awaitClose { job.cancel() }
+    }
+
     override fun verifyPaymentOnBackend(
         paymentId: String,
         orderId: String,
@@ -598,22 +697,33 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
     ): Flow<ResultState<String>> = callbackFlow {
         trySend(ResultState.Loading)
 
+        // Log the data being sent to debug HTTP 500
+        android.util.Log.d("PaymentVerify", "Sending to Backend - OrderID: $orderId, PaymentID: $paymentId")
+
+        if (orderId.isEmpty()) {
+            trySend(ResultState.Error("Razorpay Order ID is missing. Please create an order on backend first."))
+            close()
+            return@callbackFlow
+        }
+
         val request = PaymentVerificationRequest(
             orderId = orderId,
             paymentId = paymentId,
             signature = signature
         )
 
-        // Using coroutine scope from the flow context (which is typically IO for networking)
-        // Note: callbackFlow isn't the best for simple suspend calls, but we'll stick to the existing pattern
-        kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        val job = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
             try {
                 val response = paymentApiService.verifyPayment(request)
-                if (response.status == "success") {
+                if (response.success) {
                     trySend(ResultState.Success("Payment Verified"))
                 } else {
                     trySend(ResultState.Error(response.message ?: "Verification failed"))
                 }
+            } catch (e: retrofit2.HttpException) {
+                val errorBody = e.response()?.errorBody()?.string()
+                android.util.Log.e("PaymentVerify", "HTTP Error: ${e.code()} - $errorBody")
+                trySend(ResultState.Error("Server Error (500): Check Backend Logs"))
             } catch (e: Exception) {
                 trySend(ResultState.Error(e.message ?: "Network error"))
             } finally {
@@ -621,7 +731,7 @@ class RepoImp @Inject constructor(private val FirebaseFirestore: FirebaseFiresto
             }
         }
 
-        awaitClose { }
+        awaitClose { job.cancel() }
     }
 
 

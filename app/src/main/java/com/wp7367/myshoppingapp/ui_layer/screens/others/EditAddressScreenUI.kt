@@ -38,6 +38,7 @@ import com.wp7367.myshoppingapp.ui_layer.viewModel.ShippingViewModel
 fun EditAddressScreen(
     modifier: Modifier = Modifier,
     navController: NavController,
+    addressId: String? = null,
     viewModel: ShippingViewModel = hiltViewModel()
 ) {
     val editAddressState by viewModel.shippingAddressSt.collectAsStateWithLifecycle()
@@ -52,6 +53,7 @@ fun EditAddressScreen(
     var pinCode by remember { mutableStateOf("") }
     var contactNumber by remember { mutableStateOf("") }
     var state by remember { mutableStateOf("") }
+    var selected by remember { mutableStateOf(false) }
 
     var emailError by remember { mutableStateOf<String?>(null) }
     var fullNameError by remember { mutableStateOf<String?>(null) }
@@ -70,16 +72,19 @@ fun EditAddressScreen(
 
     // Pre-fill fields if address exists
     LaunchedEffect(existingAddressState.data) {
-        val existing = existingAddressState.data.firstOrNull()
-        if (existing != null) {
-            email = existing.email
-            fullName = existing.fullName
-            address1 = existing.address1
-            address2 = existing.address2
-            city = existing.city
-            pinCode = existing.postalCode
-            contactNumber = existing.contactNumber
-            state = existing.state
+        if (addressId != null) {
+            val existing = existingAddressState.data.find { it.addressId == addressId }
+            if (existing != null) {
+                email = existing.email
+                fullName = existing.fullName
+                address1 = existing.address1
+                address2 = existing.address2
+                city = existing.city
+                pinCode = existing.postalCode
+                contactNumber = existing.contactNumber
+                state = existing.state
+                selected = existing.selected
+            }
         }
     }
 
@@ -119,7 +124,7 @@ fun EditAddressScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Shipping Address", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                title = { Text(if (addressId == null) "Add Address" else "Edit Address", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -138,6 +143,7 @@ fun EditAddressScreen(
                     onClick = {
                         if (validateForm()) {
                             val addressData = shippingModel(
+                                addressId = addressId ?: "",
                                 email = email,
                                 fullName = fullName,
                                 address1 = address1,
@@ -146,6 +152,7 @@ fun EditAddressScreen(
                                 postalCode = pinCode,
                                 contactNumber = contactNumber,
                                 state = state,
+                                selected = selected
                             )
                             viewModel.shippingAddress(addressData)
                         }

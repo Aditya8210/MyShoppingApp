@@ -25,7 +25,7 @@ object UiModel {
     @Singleton
     fun provideRetrofit(): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("https://your-render-app-url.onrender.com/") // TODO: PASTE YOUR RENDER URL HERE
+            .baseUrl("https://bugpilotai.onrender.com/api/v1/payment/") // Fixed: Added trailing slash to prevent crash
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
